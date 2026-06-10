@@ -51,17 +51,17 @@ SKIP_INITIAL_SIMS = True   # Skip LHS + initial sims, use existing result.csv fo
 DELAY_BETWEEN_RUNS = 0  # seconds between runs (0 = no delay)
 
 # --- LHS Parameters ---
-LHS_N_SAMPLES = 36  # Number of LHS samples
+LHS_N_SAMPLES = 50  # Number of LHS samples (N_init = 10d = 50, book §3.3)
 
 LHS_SAMPLING_METHOD = 'optimum'  # 'random', 'maximin', or 'optimum' (smt library)
 LHS_RANDOM_SEED = None          # None = random seed
 
 # Parameter bounds (h_r = WAFER_THICKNESS - h_si)
 SWEEP_PARAMETERS = {
-    'w_r':     {'min': 350e-9,  'max': 500e-9,  'unit': 'm'},    # Waveguide width (350nm - 500nm)
+    'w_r':     {'min': 350e-9,  'max': 550e-9,  'unit': 'm'},    # Waveguide width (350nm - 550nm)
     'h_si':    {'min': 70e-9,   'max': 130e-9,  'unit': 'm'},    # Silicon height (70nm - 130nm)
     'doping':  {'min': 1e17,    'max': 1e21,    'unit': 'cm^-3'},  # Doping concentration 
-    'lambda':  {'min': 1260e-9, 'max': 1360e-9, 'unit': 'm'},    # Wavelength (1.26um - 2um)
+    'lambda':  {'min': 1260e-9, 'max': 1360e-9, 'unit': 'm'},    # Wavelength (1.26um - 1.36um, O-Band; fixed to 1310nm via DISCRETE_PARAMETERS)
     'S':       {'min': 0,       'max': 0.8e-6,  'unit': 'm'},    # Junction offset (0nm - 800nm)
     'length':  {'min': 0.1e-3,  'max': 1.0e-3,  'unit': 'm'}     # Device length (0.1mm - 1.0mm)
 }
@@ -98,18 +98,18 @@ DOPING_X_MAX = 5e-6   # drain_pwell x_max (m)
 MAX_ITERATIONS = 100   # BO iterations
 BO_KAPPA = 4.0        # UCB kappa (low=exploit, high=explore)
 BO_KAPPA_DECAY = 0.98  # Multiply kappa by this each iteration (1.0 = no decay)
-# --- Cost Function (Eq. 27) ---
+# --- Cost Function (Eq. 34; constants Eq. 35-39) ---
 FOM_WEIGHTS = {'loss': 0.5, 'vpil': 0.5}  # dB/cm, V*mm
 TARGETS = {'loss': 20.0, 'vpil': 0.8}      # Normalization targets
 
-# Piecewise Penalty Constants for failed phase shifts
-# These are derived dynamically so C_BASE always exceeds the theoretical worst
-# valid-device cost, mathematically preventing cost inversion.
+# Piecewise Penalty Constants for failed phase shifts (Eq. 35-39).
+# C_BASE is the worst legitimate (Branch A) cost, obtained at the switching
+# voltage V_MAX and the maximum allowed optical loss alpha_max (book §3.3.2, Eq. 35).
 WORST_CASE_VPIL = V_MAX * (SWEEP_PARAMETERS['length']['max'] * 1e3)  # V_MAX * L_max (V*mm)
 ALPHA_MAX = 3.0 * TARGETS['loss']                                    # Hard optical limit (dB/cm)
 MAX_VALID_COST = (FOM_WEIGHTS['loss'] * (ALPHA_MAX / TARGETS['loss'])**2
                  + FOM_WEIGHTS['vpil'] * (WORST_CASE_VPIL / TARGETS['vpil'])**2)  # Theoretical worst Branch A cost
-C_BASE = MAX_VALID_COST + 2.0       # Failed-device baseline; always > MAX_VALID_COST
-BETA_ELEC = (9.0 * C_BASE) / (np.pi**2)  # Quadratic electrical penalty coefficient
-BETA_OPT  = C_BASE / 100.0               # Linear optical penalty coefficient (prevents gradient explosion)
+C_BASE = MAX_VALID_COST                  # Failed-device baseline (Eq. 35)
+BETA_ELEC = (9.0 * C_BASE) / (np.pi**2)  # Quadratic electrical penalty coefficient (Eq. 37)
+BETA_OPT  = (9.0 * C_BASE) / ALPHA_MAX   # Linear optical penalty coefficient (Eq. 39)
 

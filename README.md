@@ -70,9 +70,9 @@ Download from the [Releases page](https://github.com/ilaiyomsh/PS_Opt_V2/release
 
 | Parameter | Symbol | Range | Unit |
 |-----------|--------|-------|------|
-| Rib width | `w_r` | 350 – 500 | nm |
+| Rib width | `w_r` | 350 – 550 | nm |
 | Silicon height | `h_si` | 70 – 130 | nm (10 nm grid, discrete) |
-| Doping | `doping` | 1e17 – 1e18 | cm⁻³ |
+| Doping | `doping` | 1e17 – 1e21 | cm⁻³ |
 | Spacing | `S` | 0 – 800 | nm |
 | Wavelength | `lambda` | 1260 – 1360 | nm |
 | Length | `length` | 0.1 – 1.0 | mm |
@@ -134,10 +134,10 @@ All values at `V_π` are interpolated from the simulated sweeps. See `system/dat
 | `SKIP_INITIAL_SIMS` | `False` | Jump straight to BO with existing `result.csv` |
 | `HIDE_GUI` | `True` | Hide Lumerical GUI |
 | `DEBUG`, `SHOW_PLOTS` | `False` | Interactive/visualization |
-| `LHS_N_SAMPLES` | `60` | Number of initial samples |
+| `LHS_N_SAMPLES` | `50` | Number of initial samples |
 | `LHS_SAMPLING_METHOD` | `'random'` | `'random' \| 'maximin' \| 'optimum'` (smt) |
 | `MAX_ITERATIONS` | `100` | BO iterations |
-| `BO_KAPPA` | `2.0` | UCB exploration weight |
+| `BO_KAPPA` | `4.0` | UCB exploration weight |
 | `BO_KAPPA_DECAY` | `1.0` | Multiplier per iteration (`1.0` disables) |
 | `DELAY_BETWEEN_RUNS` | `0` | Cooling delay (seconds) between sims |
 | `FOM_WEIGHTS`, `TARGETS` | see above | Cost-function tuning |
