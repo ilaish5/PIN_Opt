@@ -56,8 +56,11 @@ venv.bak/
 *.ldf
 
 # Lumerical_Files: ignore everything except the .gitkeep placeholder
+# and the two primary reference models (tracked via Git LFS).
 Lumerical_Files/*
 !Lumerical_Files/.gitkeep
+!Lumerical_Files/PIN_Ref_paper_Charge.ldev
+!Lumerical_Files/PIN_Ref_phase_shifter.lms
 
 # Simulation CSV files (ignore results but keep structure)
 simulation csv/*.csv
