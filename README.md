@@ -160,6 +160,14 @@ PS_Opt_V2/
 │
 ├── Lumerical_Files/           # Templates (Git LFS / Releases)
 ├── simulation csv/            # Inputs/outputs
+├── analysis/                  # Post-optimization analysis of the best design (Sim 109)
+│   ├── plots.ipynb            # Project-book figures from result.csv
+│   ├── RC_design_Loss.m       # RC equalizer design (loss → bandwidth trade-off)
+│   ├── rc_equalizer_S21.s2p   # Equalizer S21 response (Touchstone)
+│   ├── plot_eye_diagram_interconnect.py  # Eye diagrams via INTERCONNECT API
+│   └── eye_rc_interconnect/   # Baseline + equalized .icp projects (Git LFS)
+├── results_archive/
+│   └── best_run_109/          # Best BO run summary (result.csv, result_full.csv)
 ├── test/                      # Pytest suite
 ├── requirements.txt
 └── README.md
