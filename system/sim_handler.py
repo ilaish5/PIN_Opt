@@ -93,11 +93,35 @@ validate_discrete_config()
 
 def extract_raw_charge_data(charge_session):
     charge_data = charge_session.getresult("CHARGE::monitor_charge", "total_charge")
-    return {
+    out = {
         'V_drain': charge_data['V_drain'].flatten(),
         'n': charge_data['n'].flatten(),
         'p': charge_data['p'].flatten(),
     }
+    # Terminal current I(V) on the swept 'drain' contact — used to derive the
+    # forward-bias differential resistance r_d = dV/dI (-> R_F in the small-signal
+    # circuit). Optional: skipped if CHARGE doesn't expose a matching current.
+    I = extract_charge_current(charge_session, n_points=len(out['V_drain']))
+    if I is not None:
+        out['I'] = I
+    return out
+
+
+def extract_charge_current(charge_session, n_points=None):
+    """Extract the swept terminal current I(V) from the 'drain' contact.
+
+    'drain' is the biased contact (its voltage 'V_drain' is the sweep). Returns a
+    flattened current array aligned to the V sweep, or None if CHARGE didn't
+    expose a usable, length-matching 'I' field."""
+    try:
+        I = np.asarray(charge_session.getresult("CHARGE", "drain")['I']).flatten()
+    except Exception:
+        print("      WARN: no CHARGE terminal current found — r_d will be unavailable")
+        return None
+    if n_points is not None and I.size != n_points:
+        print("      WARN: CHARGE current length mismatch — r_d will be unavailable")
+        return None
+    return I
 
 
 def extract_raw_optical_data(fde_session):
@@ -339,6 +363,9 @@ def run_full_simulation(params, sim_id=None):
         'neff_re': np.real(result['neff']).flatten(),
         'neff_im': np.imag(result['neff']).flatten(),
     })
+    # Optional terminal current (forward r_d) — only added when CHARGE provided it.
+    if 'I' in result and result['I'] is not None and len(result['I']) == len(raw_df):
+        raw_df['I'] = np.asarray(result['I']).flatten()
 
     run_dir = os.path.join(config.RAW_OUTPUT_DIR, f"{config.RUN_TIMESTAMP}_result")
     os.makedirs(run_dir, exist_ok=True)
