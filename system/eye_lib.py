@@ -60,27 +60,18 @@ def design_equalizer(R_F, C_F, f_3dB, R_S=0.0, target_bw=100e9,
                      mode="corrected", R_drv=R_DRV_DEFAULT):
     """Size the RC peaking equalizer for a target equalized bandwidth.
 
-    eta   = target_bw / f_3dB        (eq 47 solved for eta; sets the IL shelf)
-    IL_dB = 20 * log10(eta)          (eq 46)
-    C_eq  = C_F / eta                (eq 49; cap scales down with eta, physical)
+        eta = target_bw / f_3dB,  IL_dB = 20*log10(eta),  C_eq = C_F / eta
 
-    The equalizer time constant (and hence the zero) is set by `mode`:
+    `mode` sets where the equalizer zero sits (the only difference between modes;
+    the .s2p depends only on R_eq*C_eq and eta):
 
-    - mode="corrected" (DELIVERED DEFAULT): place the zero at the *loaded* device
-      pole `f_3dB` so the equalizer actually cancels the bandwidth-limiting pole
-      and extends BW to eta*f_3dB:
-          R_eq*C_eq = (R_S + R_drv) * C_F   -> zero at f_3dB, pole at eta*f_3dB
-      (=> R_eq = (R_S + R_drv) * eta).
+    - "corrected" (default): zero at the loaded device pole f_3dB
+      (R_eq*C_eq = (R_S+R_drv)*C_F) -> pole at eta*f_3dB, so BW extends to
+      eta*f_3dB. This is the form that actually works.
+    - "book": the book's eqs 18/19/48/49 (R_eq=R_F*eta, zero at the ~43.5 MHz
+      diffusion corner). Does NOT extend BW (WORKLOG sec 6b); kept for comparison.
 
-    - mode="book": reproduce the book's eqs 18/19/48/49 exactly:
-          R_eq = R_F * eta,  R_eq*C_eq = R_F*C_F  -> zero at 1/(2*pi*R_F*C_F),
-      the *diffusion* corner (~43.5 MHz), far below f_3dB. As WORKLOG sec 6b shows,
-      this does NOT extend BW to eta*f_3dB (the eye stays ~closed). Kept only to
-      reproduce the book's (flawed) numbers.
-
-    The .s2p transfer depends only on (R_eq*C_eq, eta), so the two modes differ
-    purely in where the zero sits. Returns a dict with both the components and the
-    zero/pole frequencies. Does NOT cap/reduce the target (spec: no silent cap).
+    Returns the components + zero/pole frequencies. Does not cap the target.
     """
     eta = float(target_bw) / float(f_3dB)
     C_eq = C_F / eta

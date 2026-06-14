@@ -2,20 +2,14 @@
 #
 # Per-sim_id eye-diagram tool (CHARGE -> FDE -> INTERCONNECT).
 #
-# Given a sim_id (read from a results CSV), this:
-#   Stage A  - runs a fresh CHARGE+FDE for the design's 6 input parameters and
-#              derives the small-signal circuit (V_pi, C_F, R_F, R_S, f_3dB) using
-#              ONLY the project-book formulas + an SSAC small-signal fit.
-#   Stage B  - designs an RC peaking equalizer for a target bandwidth (default
-#              100 GHz) and writes its Touchstone .s2p (corrected H_Eq, spec 3.4).
-#   Stage C  - drives the prebuilt INTERCONNECT .icp circuits (baseline +
-#              equalized), reads PD_SCOPE, and writes eye diagrams + a Bode plot.
+#   Stage A  extract the small-signal circuit (V_pi, C_F, R_F, R_S, f_3dB) from a
+#            fresh CHARGE+FDE+SSAC run of the design's 6 input parameters.
+#   Stage B  design a 100 GHz RC peaking equalizer and write its Touchstone .s2p.
+#   Stage C  drive the prebuilt INTERCONNECT .icp circuits and plot the eyes + Bode.
 #
-# Outputs -> results_archive/eye_<sim_id>/.
-#
-# Mirrors the CLI/UX of run_specific_sim.py. Does NOT modify the optimization
-# pipeline (main.py / BO.py / cost.py); reuses sim_handler / data_processor /
-# eye_lib. English only.
+# Outputs -> results_archive/eye_<sim_id>/. Mirrors run_specific_sim.py's CLI.
+# Reuses sim_handler / data_processor / eye_lib; leaves the optimization pipeline
+# (main.py / BO.py / cost.py) untouched. English only.
 
 import os
 import sys
@@ -50,45 +44,21 @@ ARCHIVE_DIR = os.path.join(ROOT, "results_archive")
 DEFAULT_CSV = config.RESULTS_CSV_FILE
 R_DRV = eye_lib.R_DRV_DEFAULT                        # 50 ohm driver
 
-# CHARGE 2D normalization length [m]. Value 0.01 read from the .ldev
-# (getnamed("CHARGE","norm length")).
-NORM_LENGTH = 0.01
-
-# -------------------------------------------------------------------------
-# STAGE A EXTRACTION POLICY (PRAGMATIC PER-PARAM) -- see WORKLOG sec 3.6/8.
-# -------------------------------------------------------------------------
-# The prior session proved (WORKLOG sec 3) that the book's Table-3 small-signal
-# triple is NOT reproducible from a single self-consistent extraction: it mixes
-# values from different operating points AND inconsistent normalizations. So each
-# parameter is taken by its own best-supported method, every one documented:
-#
-#   C_F  = SSAC high-frequency reactance (the depletion/junction cap). It is FLAT
-#          over freq and over bias 0..0.5 V at ~0.33 pF with NO length scaling and
-#          reproduces book 0.347 pF within ~5%. (The quasi-static dQ/dV * L only
-#          hits 0.347 pF by coincidence on a steep diffusion ramp near 0.51 V and
-#          is NOT robust; SSAC is used instead.)
-#   R_F  = (dV/dI)/L on the forward branch, log-interpolated at a DEFINED forward
-#          operating bias (FORWARD_OP_BIAS, default 0.79 V). The book's R_F =
-#          10.55 kohm corresponds to this ~0.79 V crossing (NOT V_pi, where r_d is
-#          only ~1-2 kohm). The operating bias is inherited from the book; the
-#          VALUE is read fresh from THIS sim's CHARGE sweep. r_d is steep here so
-#          R_F is noisy -- the gate tolerance is +/-15% for exactly this reason.
-#   R_S  = book value 23.31 ohm (SSAC high-f Re(Z) is ~0.13 ohm and does NOT scale
-#          to 23.31 under any single convention -- documented caveat, WORKLOG 3.6).
-#   f_3dB = 1/(2*pi*(R_S+R_drv)*C_F)  (book eq 18/45) -> ~6.25 GHz for sim 109.
-#
-# NOTE: SSAC_OP_BIAS=0.5 was the WRONG hypothesised "operating point" (the book
-# triple is not at 0.5 V); it is NOT hardcoded as an operating point anymore. The
-# SSAC ramp simply runs 0 -> SSAC_RAMP_TOP so the solver converges by continuation;
-# C_F is the flat high-f cap and is essentially bias-independent over that range.
+# Stage A extraction policy (pragmatic per-param). The book's Table-3 triple can't
+# be reproduced from one self-consistent extraction -- it mixes operating points and
+# normalizations -- so each parameter uses its own best method (details in WORKLOG
+# sec 8):
+#   C_F   = SSAC high-frequency reactance (depletion cap; no length scaling)
+#   R_F   = (dV/dI)/L on the forward branch, taken at FORWARD_OP_BIAS
+#   R_S   = book value (SSAC can't reproduce it -- documented caveat)
+#   f_3dB = 1/(2*pi*(R_S+R_drv)*C_F)
 FORWARD_OP_BIAS = 0.79          # [V] book forward operating point (rd=10.55k crossing)
 R_S_BOOK = 23.31                # [ohm] book Table 3 (SSAC does not reproduce it)
+
 SSAC_RAMP_TOP = 0.5             # [V] top of the SSAC continuation ramp
 SSAC_PERTURBATION = 0.001       # [V]
 SSAC_F_START, SSAC_F_STOP, SSAC_PTS_PER_DEC = 1e3, 2e11, 2.0
-# Medium mesh for the SSAC pass: the production .ldev auto-refines to ~78k
-# elements (~25 min SSAC solve). This medium mesh gives ~46 s and reproduced the
-# validated depletion cap (~0.33 pF) in the prior session (WORKLOG sec 3.5/3.6).
+# Medium mesh -> ~46 s SSAC solve (vs ~25 min on the production auto-refined mesh).
 SSAC_MESH = {"max refine steps": 60.0, "min edge length": 5e-9, "max edge length": 5e-7}
 
 ICP_DIR = os.path.join(config.LUMERICAL_FILES_DIR, "eye_rc_interconnect")
@@ -152,12 +122,11 @@ def out_dir_for(sim_id):
 # ===========================================================================
 
 def extract_R_F(V, I, L_m, op_bias=FORWARD_OP_BIAS):
-    """Forward-branch junction differential resistance R_F = (dV/dI)/L.
+    """Forward-branch differential resistance R_F = (dV/dI)/L at `op_bias`.
 
-    Mirrors analysis/rd_vs_bias.py. r_d(V) falls steeply with forward bias, so it
-    is log-interpolated at the DEFINED forward operating bias `op_bias`. Returns
-    (R_F_at_op_bias, Vs, Rs) where (Vs, Rs) is the physical forward branch for
-    plotting/inspection. The book's R_F = 10.55 kohm sits at op_bias ~ 0.79 V.
+    Mirrors analysis/rd_vs_bias.py. r_d(V) spans many decades, so it is
+    log-interpolated at op_bias. Returns (R_F, Vs, Rs); (Vs, Rs) is the forward
+    branch for inspection. Book R_F = 10.55 kohm sits at op_bias ~ 0.79 V.
     """
     V = np.asarray(V, dtype=float)
     I = np.asarray(I, dtype=float)
@@ -165,18 +134,13 @@ def extract_R_F(V, I, L_m, op_bias=FORWARD_OP_BIAS):
     mask = (V >= 0.4) & (I > 0) & np.isfinite(R) & (R > 0)
     order = np.argsort(V[mask])
     Vs, Rs = V[mask][order], R[mask][order]
-    # log-interpolate r_d at op_bias (r_d spans many decades).
     R_F = float(np.exp(np.interp(op_bias, Vs, np.log(Rs))))
     return R_F, Vs, Rs
 
 
 def run_charge_fde(params, sim_id, out_dir):
-    """Reuse the standard pipeline to run CHARGE+FDE and get V_pi, loss, C(V), R_F.
-
-    Returns dict with v_pi_V, v_pi_l_Vmm, loss_at_v_pi_dB_per_cm, V_cap,
-    C_total_pF_cm, C_at_v_pi_pF_per_cm, R_F (forward branch at FORWARD_OP_BIAS),
-    the forward r_d curve, and the raw DataFrame path.
-    """
+    """Run the standard CHARGE+FDE pipeline and return V_pi, V_pi*L, loss, C(V),
+    and R_F (forward branch at FORWARD_OP_BIAS)."""
     # Redirect the pipeline's raw output into the eye_<sim_id> dir.
     config.RAW_OUTPUT_DIR = os.path.join(out_dir, "raw")
     config.RUN_TIMESTAMP = f"eye_{sim_id}"
@@ -193,7 +157,7 @@ def run_charge_fde(params, sim_id, out_dir):
     C_at_vpi = float(np.interp(v_pi, V_cap, C_total_pF_cm)) if valid else float("nan")
     v_pi_l = (v_pi * float(params["length"]) * 1e3) if valid else float("nan")
 
-    # R_F from the swept terminal current on the forward branch (sec rd_vs_bias).
+    # R_F from the swept terminal current on the forward branch.
     R_F, Vs_rd, Rs_rd = (float("nan"), None, None)
     if "I" in raw_df.columns:
         R_F, Vs_rd, Rs_rd = extract_R_F(
@@ -210,23 +174,13 @@ def run_charge_fde(params, sim_id, out_dir):
 
 
 def extract_ssac_cap(params, ramp_top=SSAC_RAMP_TOP):
-    """Run CHARGE SSAC over a 0 -> ramp_top continuation ramp and extract C_F
-    from the HIGH-FREQUENCY reactance (the depletion/junction capacitance).
+    """Run CHARGE SSAC (0 -> ramp_top continuation ramp) and read C_F from the
+    high-frequency reactance Im(Y)/w (the depletion cap).
 
-    Why high-f reactance (not a single-pole RC fit): the device is NOT single-pole
-    (large low-f diffusion cap + small high-f junction cap), so the book model
-    Z = R_S + R_F/(1+jwR_FC_F) diverges when fit (WORKLOG sec 3.5/3.6). The
-    high-f admittance, however, is cleanly capacitive: Im(Y)/w -> C_F, and it is
-    FLAT over freq and over bias 0..0.5 V at ~0.33 pF (reproduces book 0.347 pF
-    within ~5%, with NO length scaling -- the norm-length cap IS the device cap
-    for this Table-3 number).
-
-    Returns dict:
-      C_F      -- high-f cap [F] (used downstream; NO length scaling)
-      R_S_ssac -- high-f Re(Z) [ohm] at the top bias (documentation only; this is
-                  ~0.13 ohm and does NOT reproduce book 23.31 ohm -- see caveat)
-      op_bias  -- top of the ramp [V]
-      table    -- per-bias {V, C_hf_pF, ReZ_hf}
+    A single-pole RC fit is avoided because the device is two-cap and the fit
+    diverges; the high-f admittance is cleanly capacitive (WORKLOG sec 3.5/3.6).
+    Returns {C_F [F], R_S_ssac [ohm] (high-f Re(Z), reported for the caveat only),
+    op_bias [V], table}. C_F uses NO length scaling.
     """
     if lumapi is None:
         raise RuntimeError("lumapi not available")
@@ -238,17 +192,16 @@ def extract_ssac_cap(params, ramp_top=SSAC_RAMP_TOP):
         dev.load(config.CHARGE_SIM_FILE)
         sim_handler.set_charge_parameters(dev, params, os.path.join(local, "ssac.mat"))
         dev.switchtolayout()
-        for k, v in SSAC_MESH.items():           # medium mesh -> ~46 s SSAC solve
+        for k, v in SSAC_MESH.items():
             dev.setnamed("CHARGE", k, v)
         bc = "CHARGE::boundary conditions::drain"
-        # Ramp 0 -> ramp_top in ~0.1 V steps (sequential continuation -> fast
-        # convergence; a single hard jump from equilibrium is ~100x slower).
+        # Ramp in ~0.1 V steps (continuation); a single hard jump is ~100x slower.
         npts = max(int(round(ramp_top / 0.1)) + 1, 3)
         dev.setnamed(bc, "sweep type", "range")
         dev.setnamed(bc, "range start", 0.0)
         dev.setnamed(bc, "range stop", ramp_top)
         dev.setnamed(bc, "range num points", float(npts))
-        # SSAC requires >=1 small-signal source: designate the drain electrode.
+        # SSAC needs >=1 small-signal source: designate the drain electrode.
         dev.setnamed(bc, "apply AC small signal", "all")
         dev.setnamed("CHARGE", "solver mode", "ssac")
         dev.setnamed("CHARGE", "perturbation amplitude", SSAC_PERTURBATION)
@@ -259,9 +212,8 @@ def extract_ssac_cap(params, ramp_top=SSAC_RAMP_TOP):
         dev.save(os.path.join(local, "ssac.ldev"))
         dev.mesh()
         dev.run()
-        # AC small-signal results live under the NEW 'ac_drain' provider after an
-        # SSAC run (the DC 'drain' result has no frequency axis). Complex current
-        # is the 'dI' attribute (WORKLOG sec 3.5).
+        # SSAC results live under 'ac_drain' (not the DC 'drain' result); the
+        # complex small-signal current is the 'dI' attribute (WORKLOG sec 3.5).
         ac = dev.getresult("CHARGE", "ac_drain")
     finally:
         try:
@@ -308,14 +260,8 @@ def _read_scope(ic, name):
 
 
 def _set_ic(ic, name, prop, val):
-    """setnamed with an expression-override fallback.
-
-    Some .icp element properties carry a bound EXPRESSION (equation), which makes
-    a plain setnamed raise "You cannot set the value of a property when it already
-    has an expression". For numeric values, fall back to setexpression (mirrors the
-    legacy build_eye_rc.py::_setval pattern). Strings (e.g. the .s2p path) use
-    setnamed directly.
-    """
+    """setnamed, falling back to setexpression for numeric props that carry a
+    bound expression in the .icp (which would otherwise reject setnamed)."""
     try:
         ic.setnamed(name, prop, val)
         return
@@ -409,8 +355,8 @@ def plot_bode(cp, out_path):
 # Validation against the sim-109 reference (EYE_TOOL_SPEC.md sec 6, Table 2/3)
 # ===========================================================================
 
-# (target, +/- tolerance fraction). Only used as a self-check / printout; the
-# tool never reads these values into the computation.
+# (target, +/- tolerance fraction). Self-check printout only -- never fed back
+# into the computation.
 SIM109_TARGETS = {
     "V_pi":      (0.863,    0.02),
     "V_pi*L":    (0.649,    0.02),
@@ -423,10 +369,9 @@ SIM109_TARGETS = {
 
 
 def print_validation_table(got, sim_id):
-    """Print the sec-6 validation table (got/target/delta/pass) for sim 109.
-
-    `got` maps the keys of SIM109_TARGETS to measured values in the SAME units as
-    the targets (V, V*mm, dB/cm, pF, kohm, ohm, GHz). Returns True if all pass.
+    """Print the sec-6 got/target/delta/pass table for sim 109. `got` keys match
+    SIM109_TARGETS, in the target units (V, V*mm, dB/cm, pF, kohm, ohm, GHz).
+    Returns True if all pass, None if not sim 109.
     """
     if int(sim_id) != 109:
         print("  (validation table is defined for the sim-109 reference only)")
