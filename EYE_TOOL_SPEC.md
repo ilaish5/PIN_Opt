@@ -70,12 +70,16 @@ Book equations (§3.2). Given the device (`R_F, C_F, f_3dB`) and a target:
 - Equalized bandwidth `f_3dB,Eq = eta · f_3dB` (eq 47).
 - Generate the equalizer **Touchstone `.s2p`** from the corrected transfer
   function (§3.4) over a frequency grid (reuse/adapt `legacy/eye_rc_analysis/eye_rc_interconnect/build_eye_rc.py::write_equalizer_touchstone` + `H_eq`, but with the **corrected** `H_Eq`).
-- **100 Gbps knob:** the book design (`IL = 12 dB`, `eta = 3.98`) yields only
-  `f_3dB,Eq ≈ 24.9 GHz`. For 100 Gbps you need far more (~70–100 GHz), i.e.
-  `eta ≈ 11–16`, `IL ≈ 21–24 dB`. Make the **target a parameter** (`--il-db` or
-  `--target-bw`); default to designing for `f_3dB,Eq ≈ 0.7 × bitrate = 70 GHz` and
-  **print a warning** that this implies a large insertion loss (compensated
-  downstream by the `AMP_1`/`TIA_1` gain). Do not silently cap.
+- **100 Gbps target (decided):** design the equalizer so the equalized
+  bandwidth reaches the **full bit rate: `f_3dB,Eq = 100 GHz`**. Therefore size
+  `η` **per design** from the extracted device bandwidth:
+  `η = f_3dB,Eq / f_3dB = 100 GHz / f_3dB`. For sim 109 (`f_3dB ≈ 6.25 GHz`) this
+  gives `η ≈ 16`, `IL = 20·log10(η) ≈ 24 dB`, `R_Eq = R_F·16 ≈ 169 kΩ`,
+  `C_Eq = C_F/16 ≈ 21.7 fF`. This is aggressive: the insertion loss is large and
+  must be compensated by the downstream `AMP_1`/`TIA_1` gain (set `AMP_1.gain ≈ IL_dB`).
+  Keep `--target-bw` overridable (default 100 GHz) but **do not** silently cap or
+  reduce the target. **Print a warning** that the raw (un-equalized) eye at
+  100 Gbps will be essentially closed and that the equalized eye carries this IL.
 
 ### Stage C — INTERCONNECT eye + Bode
 Load the **working prebuilt `.icp`** (do NOT rebuild from the legacy builder — it
@@ -212,8 +216,34 @@ Also verify: does the VM-measured INTERCONNECT equalizer response confirm the
 
 ---
 
-## 9. Open knob to confirm with the author
+## 9. Decided parameters
 
-- **100 Gbps equalizer target:** default design point = `f_3dB,Eq ≈ 70 GHz`
-  (⇒ `η ≈ 11`, `IL ≈ 21 dB`). Confirm whether to target `0.7×bitrate`,
-  `1×bitrate`, or a fixed `IL_dB`. Expect a closed raw eye at 100 Gbps regardless.
+- **Bit rate: 100 Gbps** (PRBS + Eye already set to 1e11; keep).
+- **Equalizer target: `f_3dB,Eq = 100 GHz`** (full bit rate), `η` sized per design
+  (`η = 100 GHz / f_3dB`). See Stage B. Expect a closed raw eye and a large IL on
+  the equalized eye — this is the honest result, report it as-is.
+
+---
+
+## 10. Work log — REQUIRED
+
+Maintain a running journal at **`results_archive/eye_<sim_id>/WORKLOG.md`** (and a
+top-level `EYE_TOOL_WORKLOG.md` summarizing across runs). Document as you go — not
+only the final answer:
+
+- **Attempts:** each thing you tried (API calls, SSAC settings, `.icp` property
+  names, equalizer grids), with enough detail to reproduce.
+- **Failures / blockers (`תקלות`):** the exact error or wrong result, what it
+  looked like (paste the message / the off value), and your hypothesis.
+- **Resolutions:** what fixed it and *why* — especially for the parts flagged as
+  uncertain here: the **SSAC API + result keys**, the **A/m units / `/L`
+  convention**, the **`.icp` element/property names**, and whether the measured
+  INTERCONNECT equalizer response matched the **corrected** `H_Eq` (§3.4) vs the
+  printed eq (20).
+- **Validation:** record each sim-109 check vs the §6 table (got / target / Δ /
+  pass-fail) per stage.
+- **Open questions** for the author.
+
+Write the log in English. Treat it as the primary deliverable alongside the tool:
+the discovered SSAC API and units convention are reusable knowledge for the rest
+of the project.
