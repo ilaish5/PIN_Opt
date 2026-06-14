@@ -55,12 +55,17 @@ venv.bak/
 *.log
 *.ldf
 
-# Lumerical_Files: ignore everything except the .gitkeep placeholder
-# and the two primary reference models (tracked via Git LFS).
+# Lumerical_Files: ignore everything except the .gitkeep placeholder,
+# the two primary reference models, and the INTERCONNECT eye/equalizer
+# assets (all binaries tracked via Git LFS).
 Lumerical_Files/*
 !Lumerical_Files/.gitkeep
 !Lumerical_Files/PIN_Ref_paper_Charge.ldev
 !Lumerical_Files/PIN_Ref_phase_shifter.lms
+!Lumerical_Files/eye_rc_interconnect/
+!Lumerical_Files/eye_rc_interconnect/mzm_eye_baseline.icp
+!Lumerical_Files/eye_rc_interconnect/mzm_eye_equalized.icp
+!Lumerical_Files/eye_rc_interconnect/rc_equalizer_S21.s2p
 
 # Simulation CSV files (ignore results but keep structure)
 simulation csv/*.csv

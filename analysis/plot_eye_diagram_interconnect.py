@@ -5,8 +5,8 @@
 # for both the baseline and equalized circuits side by side.
 #
 # .icp files expected at:
-#   eye_rc_interconnect/mzm_eye_baseline.icp
-#   eye_rc_interconnect/mzm_eye_equalized.icp
+#   ../Lumerical_Files/eye_rc_interconnect/mzm_eye_baseline.icp
+#   ../Lumerical_Files/eye_rc_interconnect/mzm_eye_equalized.icp
 #
 # RUN (Lumerical x64 python - GUI visible):
 #   & "C:\Program Files\Lumerical\v231\python\python.exe" plot_eye_standalone.py
@@ -27,13 +27,15 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-HERE = Path(__file__).resolve().parent
+HERE = Path(__file__).resolve().parent          # analysis/
+ROOT = HERE.parent                               # PS_Opt_V2/
+ICP_DIR = ROOT / "Lumerical_Files" / "eye_rc_interconnect"
 
 ICP = {
-    "baseline":  HERE  / "mzm_eye_baseline.icp",
-    "equalized": HERE / "mzm_eye_equalized.icp",
+    "baseline":  ICP_DIR / "mzm_eye_baseline.icp",
+    "equalized": ICP_DIR / "mzm_eye_equalized.icp",
 }
-OUT_PNG = HERE / "eye_comparison.png"
+OUT_PNG = HERE / "eye_comparison.png"            # analysis output stays here
 
 BITRATE = 100e9  # must match what was used in build_eye_rc.py
 
