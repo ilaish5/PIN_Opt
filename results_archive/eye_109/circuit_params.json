@@ -1,0 +1,23 @@
+{
+  "V_pi": 0.8623515589319545,
+  "R_S": 23.31,
+  "R_F": 11055.14375626284,
+  "C_F": 3.3138271133688374e-13,
+  "f_3dB": 6551293632.260357,
+  "eta": 15.264160883824948,
+  "R_eq": 1119.015634393207,
+  "C_eq": 2.1709854466224984e-14,
+  "IL_dB": 23.673458696714526,
+  "f_3dB_eq": 100000000000.0,
+  "rf_bias": 0.79,
+  "v_pi_l_Vmm": 0.6484883723168298,
+  "loss_at_v_pi_dB_per_cm": 15.218723722340457,
+  "_extraction": {
+    "C_F": "SSAC high-frequency reactance (depletion cap), no length scaling",
+    "R_F": "(dV/dI)/L on forward branch, log-interp at 0.79 V",
+    "R_S": "book Table-3 value 23.31 ohm; SSAC high-f Re(Z) does NOT reproduce it",
+    "f_3dB": "1/(2*pi*(R_S+R_drv)*C_F), book eq 18/45"
+  },
+  "R_S_ssac_ohm": 0.17538783005509642,
+  "ssac_ramp_top_V": 0.5
+}
