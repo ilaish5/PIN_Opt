@@ -233,7 +233,7 @@ only the final answer:
 
 - **Attempts:** each thing you tried (API calls, SSAC settings, `.icp` property
   names, equalizer grids), with enough detail to reproduce.
-- **Failures / blockers (`תקלות`):** the exact error or wrong result, what it
+- **Failures / blockers:** the exact error or wrong result, what it
   looked like (paste the message / the off value), and your hypothesis.
 - **Resolutions:** what fixed it and *why* — especially for the parts flagged as
   uncertain here: the **SSAC API + result keys**, the **A/m units / `/L`
