@@ -66,6 +66,32 @@ Download from the [Releases page](https://github.com/ilaiyomsh/PS_Opt_V2/release
 
 ---
 
+## Reproduce a single design
+
+To re-run one row from `result.csv` and check it against the recorded
+`V_pi*L` and loss (used to verify the global optimum, `sim_id 109`):
+
+```bash
+cd system
+python run_specific_sim.py        # prompts for the sim_id to verify
+```
+
+It loads that row's parameters, re-runs CHARGE + FDE, and reports the values
+against the record with a PASS/FAIL tolerance check. The raw per-sim sweep
+(including the swept terminal current `I`) is written under
+`results_archive/verify_<id>/`.
+
+The forward-bias differential resistance can then be checked offline:
+
+```bash
+python analysis/rd_vs_bias.py     # defaults to the verified optimum, sim_id 109
+```
+
+This derives `r_d = (dV/dI) / L` from the raw `I(V)` sweep and plots it against
+the small-signal `R_F` (book Table 3), saving `analysis/rd_vs_bias_109.png`.
+
+---
+
 ## Input parameters
 
 | Parameter | Symbol | Range | Unit |
@@ -155,6 +181,7 @@ PS_Opt_V2/
 │   ├── BO.py                  # GP + UCB; params [0,1], -log(cost) target
 │   ├── cost.py                # Piecewise quadratic
 │   ├── run_simulation.py      # Per-row orchestration, CSV I/O
+│   ├── run_specific_sim.py    # Re-run/verify one sim_id against result.csv
 │   ├── sim_handler.py         # Lumerical API
 │   └── data_processor.py      # Optical/electrical post-processing
 │
@@ -165,6 +192,7 @@ PS_Opt_V2/
 │   ├── RC_design_Loss.m       # RC equalizer design (loss → bandwidth trade-off)
 │   ├── rc_equalizer_S21.s2p   # Equalizer S21 response (Touchstone)
 │   ├── plot_eye_diagram_interconnect.py  # Eye diagrams via INTERCONNECT API
+│   ├── rd_vs_bias.py          # Forward-bias r_d = (dV/dI)/L vs R_F check
 │   └── eye_rc_interconnect/   # Baseline + equalized .icp projects (Git LFS)
 ├── results_archive/
 │   └── best_run_109/          # Best BO run summary (result.csv, result_full.csv)
