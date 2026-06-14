@@ -1,23 +1,27 @@
 {
-  "V_pi": 0.8623515589319545,
-  "R_S": 23.31,
-  "R_F": 11055.14375626284,
-  "C_F": 3.3138271133688374e-13,
-  "f_3dB": 6551293632.260357,
-  "eta": 15.264160883824948,
-  "R_eq": 1119.015634393207,
-  "C_eq": 2.1709854466224984e-14,
-  "IL_dB": 23.673458696714526,
-  "f_3dB_eq": 100000000000.0,
-  "rf_bias": 0.79,
-  "v_pi_l_Vmm": 0.6484883723168298,
-  "loss_at_v_pi_dB_per_cm": 15.218723722340457,
-  "_extraction": {
-    "C_F": "SSAC high-frequency reactance (depletion cap), no length scaling",
-    "R_F": "(dV/dI)/L on forward branch, log-interp at 0.79 V",
-    "R_S": "book Table-3 value 23.31 ohm; SSAC high-f Re(Z) does NOT reproduce it",
-    "f_3dB": "1/(2*pi*(R_S+R_drv)*C_F), book eq 18/45"
+  "V_pi": 0.8623516332163252,
+  "op_bias_V": 0.7,
+  "R_S": 10.325409971964943,
+  "R_F": 11359.571850973582,
+  "C_diff": 3.4033222945569854e-12,
+  "C_dep": 2.433346850314836e-14,
+  "tau_ns": 38.66028413704035,
+  "f_3dB": 775205367.0786071,
+  "f_3dB_diff": 775205367.0786071,
+  "f_3dB_dep": 108421604930.57146,
+  "R_F_dvdi": 236442.0748754455,
+  "eta": 128.9980748931784,
+  "R_eq": 7781.861753525225,
+  "C_eq": 2.638273708638855e-14,
+  "IL_dB": 42.21166458280542,
+  "f_3dB_eq": 100000000000.00002,
+  "v_pi_l_Vmm": 0.6484884281786766,
+  "loss_at_v_pi_dB_per_cm": 15.218721222634532,
+  "book": {
+    "R_S": 23.31,
+    "R_F": 10550.0,
+    "C_F": 3.471e-13,
+    "f_3dB": 6250000000.0
   },
-  "R_S_ssac_ohm": 0.17538783005509642,
-  "ssac_ramp_top_V": 0.5
+  "_method": "self-consistent SSAC: Z_device = Z_reported*(norm/L), all small-signal params read off Y_device=1/Z at the forward op bias; f_3dB = f_3dB,diff (forward-injection modulation BW); no book values forced."
 }

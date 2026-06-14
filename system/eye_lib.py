@@ -53,6 +53,44 @@ def f_3dB_device(R_S, C_F, R_drv=R_DRV_DEFAULT):
 
 
 # ---------------------------------------------------------------------------
+# Self-consistent small-signal extraction from a single SSAC sweep
+# ---------------------------------------------------------------------------
+
+def extract_small_signal(f, Z_reported, norm, L, R_drv=R_DRV_DEFAULT, n_avg=2):
+    """Read the full small-signal picture off ONE SSAC impedance sweep.
+
+    Applies the single consistent 2D->device length normalization to the WHOLE
+    impedance, Z_device = Z_reported * (norm / L), then reads everything off the
+    same Y_device = 1 / Z_device. No book values, no per-quantity rescaling.
+
+    The PIN junction has TWO capacitances, so C(f) = Im(Y)/w is read at both ends:
+      - C_diff = low-f  plateau -> forward diffusion cap (sets the injection BW)
+      - C_dep  = high-f plateau -> depletion/junction cap
+    and likewise R_F (low-f Re(Z) - R_S) and R_S (high-f Re(Z)).
+
+    Returns a dict of scalars (R_S, R_F, C_diff, C_dep, tau, f_3dB_diff,
+    f_3dB_dep) plus the device-scaled arrays (f, Z, Y, C) for the Bode plot.
+    f_3dB_diff is the physical forward-injection modulation bandwidth.
+    """
+    f = np.asarray(f, dtype=float)
+    Z = np.asarray(Z_reported, dtype=complex) * (norm / L)
+    Y = 1.0 / Z
+    w = 2 * np.pi * f
+    C = np.imag(Y) / w
+    R_S = float(np.real(Z[-1]))                 # high-f: cap shorts R_F -> R_S
+    R_F = float(np.real(Z[0])) - R_S            # low-f plateau minus R_S
+    C_diff = float(np.mean(C[:n_avg]))          # low-f cap
+    C_dep = float(np.mean(C[-n_avg:]))          # high-f cap
+    return {
+        "R_S": R_S, "R_F": R_F, "C_diff": C_diff, "C_dep": C_dep,
+        "tau": R_F * C_diff,
+        "f_3dB_diff": 1.0 / (2 * np.pi * (R_S + R_drv) * C_diff),
+        "f_3dB_dep": 1.0 / (2 * np.pi * (R_S + R_drv) * C_dep),
+        "f": f, "Z": Z, "Y": Y, "C": C,
+    }
+
+
+# ---------------------------------------------------------------------------
 # Equalizer design (book eqs 46-49, zero-pole invariant eq 19)
 # ---------------------------------------------------------------------------
 

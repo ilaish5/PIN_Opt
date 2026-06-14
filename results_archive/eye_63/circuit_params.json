@@ -1,0 +1,27 @@
+{
+  "V_pi": 0.8633994802842092,
+  "op_bias_V": 0.7,
+  "R_S": 11.851773410881945,
+  "R_F": 5644.709507794599,
+  "C_diff": 4.200805947876762e-12,
+  "C_dep": 2.3593734335986298e-14,
+  "tau_ns": 23.71232927438006,
+  "f_3dB": 612541270.84763,
+  "f_3dB_diff": 612541270.84763,
+  "f_3dB_dep": 109061455776.92621,
+  "R_F_dvdi": 191899.40331597967,
+  "eta": 163.25430588802735,
+  "R_eq": 10097.56833613708,
+  "C_eq": 2.5731670138967148e-14,
+  "IL_dB": 44.25729289526671,
+  "f_3dB_eq": 100000000000.0,
+  "v_pi_l_Vmm": 0.6725881951413989,
+  "loss_at_v_pi_dB_per_cm": 14.583496069554624,
+  "book": {
+    "R_S": 23.31,
+    "R_F": 10550.0,
+    "C_F": 3.471e-13,
+    "f_3dB": 6250000000.0
+  },
+  "_method": "self-consistent SSAC: Z_device = Z_reported*(norm/L), all small-signal params read off Y_device=1/Z at the forward op bias; f_3dB = f_3dB,diff (forward-injection modulation BW); no book values forced."
+}

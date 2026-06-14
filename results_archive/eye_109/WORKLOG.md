@@ -14,17 +14,17 @@ Status legend: ✅ done · 🔄 in progress · ⛔ blocked · ❓ open question
 | Setup | Environment / interpreter discovery | ✅ |
 | Setup | Reusable-code map (CHARGE/FDE/INTERCONNECT) | ✅ |
 | Setup | SSAC API discovery (CHARGE solver) | ✅ (`solver mode='ssac'`, BC at `CHARGE::boundary conditions::drain`) |
-| A | Device params (C_F, R_F, R_S, V_pi, f_3dB) | ✅ FINALIZED — pragmatic per-param (sec 8); LIVE run reproduces Table 3 |
-| B | Equalizer design + `.s2p` (`system/eye_lib.py`) | ✅ helper built+self-tested (corrected zero ⇒ BW→100 GHz) |
-| C | INTERCONNECT eye + Bode | ✅ eyes produced (baseline closed, equalized open @100 Gbps); Bode marks f_3dB / f_3dB,Eq |
-| — | `system/run_specific_eye.py` end-to-end | ✅ runs A→C for sim 109; all 7 sec-6 checks OK |
+| A | Device params (R_S, R_F, C_diff, C_dep, f_3dB) | ✅ **SUPERSEDED by sec 10** — now a SELF-CONSISTENT, fully sim-computed extraction (no book values forced) |
+| B | Equalizer design + `.s2p` (`system/eye_lib.py`) | ✅ now keyed off the COMPUTED f_3dB,diff |
+| C | INTERCONNECT eye + Bode | ✅ eyes (baseline dead, equalized open) + Bode + **new Z/Y Bode** for 109 and 63 |
+| — | `system/run_specific_eye.py` end-to-end | ✅ runs A→C for sim 109 AND sim 63 |
 
-**Stage A is finalized per the PRAGMATIC PER-PARAM decision (sec 8 below).** The
-LIVE end-to-end run (`run_full.log`) reproduces every Table-3 number within
-tolerance: V_pi −0.1%, V_pi·L −0.1%, loss +0.1%, **C_F −4.5%, R_F +4.8%,
-R_S = book (0%), f_3dB +4.8% — all 7 PASS.** Stage C produced
-`eye_comparison.png` (baseline 100 Gbps eye fully CLOSED; equalized eye wide
-OPEN) and `bode.png` (raw −3 dB at 6.55 GHz; equalized cascade flat to 100 GHz).
+> **CURRENT APPROACH = sec 10 (self-consistent).** Sections 1–9 below are the
+> historical record (incl. the now-retired "pragmatic per-param" Stage A of sec 8,
+> which forced R_S = book 23.31 Ω). Sec 10 replaces it: ONE SSAC sweep at the
+> forward operating bias, ONE length normalization on the whole impedance,
+> everything read off the same Y_device — R_S, R_F, C_diff, C_dep, f_3dB all
+> per-sim, no book values forced. Skip to sec 10 for the live tool's behaviour.
 
 ---
 
@@ -559,3 +559,99 @@ pre-existing environment/share flakiness (the first run on identical code
 succeeded), **not** a tool defect. Mitigation for a fully clean log: run with the
 sweep output on local disk, or simply retry when the share is responsive. The
 tool's own SSAC pass already uses local-disk I/O (`%TEMP%\eye_ssac`) for this reason.
+
+---
+
+## 10. SELF-CONSISTENT, FULLY SIM-COMPUTED Stage A (current approach)
+
+Replaces the pragmatic per-param Stage A (sec 8), which forced `R_S = 23.31 Ω`
+(the book value) into every design — even sim 63, whose own SSAC gives a different
+R_S. The new Stage A computes **everything from the sim**, with no book values fed
+into the computation.
+
+### 10.1 Method — one SSAC sweep, one normalization, one admittance
+- Run ONE CHARGE SSAC sweep ramped (continuation) to the forward operating bias
+  (0.70 V), swept **1 Hz → 200 GHz** so both small-signal corners are captured.
+- Apply ONE consistent 2D→device length normalization to the WHOLE impedance:
+  `Z_device(ω) = Z_reported(ω) · (norm/L)`  (norm = 0.01 m, L = device length).
+- Read everything off the same `Y_device = 1/Z_device`
+  (`eye_lib.extract_small_signal`):
+  - `R_S`   = `Re(Z_device)` at the highest frequency (cap shorts R_F).
+  - `R_F`   = low-frequency `Re(Z_device) − R_S`.
+  - `C_diff`= `Im(Y)/ω` at LOW freq  → forward diffusion cap.
+  - `C_dep` = `Im(Y)/ω` at HIGH freq → depletion/junction cap.
+  - `τ`     = `R_F · C_diff`.
+  - `f_3dB,diff` = `1/(2π(R_S+R_drv)·C_diff)`  ← the physical forward-injection BW.
+  - `f_3dB,dep`  = `1/(2π(R_S+R_drv)·C_dep)`   ← depletion-limited (reverse-bias).
+
+Because the single normalization scales R up and C down by the same factor, the
+scaling-invariant product `τ = R_F·C_diff` is meaningful and the whole picture is
+internally consistent.
+
+### 10.2 The two-capacitance picture is real and bias-dependent
+`zy_bode.png` (per design) shows `C(f) = Im(Y)/ω` falling from the `C_diff` plateau
+(low f) to the `C_dep` plateau (high f) — the PIN junction's two caps. The forward
+diffusion cap dominates at the operating bias and is huge compared with the
+depletion cap (~140× for sim 109), so the **forward-injection modulation bandwidth
+`f_3dB,diff` is the physical one** — a carrier-injection modulator is limited by
+minority-carrier dynamics (the diffusion cap), not by the depletion cap. The
+depletion BW `f_3dB,dep` (~100 GHz) would only apply to a reverse-biased
+depletion-mode device.
+
+The picture is strongly bias-dependent (printed every run as the bias sweep), e.g.
+sim 109: at 0.60 V `R_F=517 kΩ, C_diff=0.47 pF, f_diff=6.4 GHz`; at 0.70 V
+`R_F=11.4 kΩ, C_diff=3.4 pF, f_diff=0.78 GHz`; at 0.80 V `R_F=0.26 kΩ,
+C_diff=20.9 pF, f_diff=0.12 GHz`. The operating bias is anchored at **0.70 V**:
+that is where the computed `R_F` reproduces the book's own operating point
+(book `R_F = 10.55 kΩ`), so the other quantities are reported at the same physical
+bias. (`--op-bias` overrides; the full sweep is always printed.)
+
+### 10.3 Computed (per-sim) vs book — the values now DIFFER between designs
+Both at op bias 0.70 V, length-scaled (×norm/L). **No book value is forced.**
+
+| quantity | sim 109 | sim 63 | book | note |
+|---|---|---|---|---|
+| `R_S` [Ω] | **10.33** | **11.85** | 23.31 | per-sim, ~half book — book includes external contact/metal R not in the 2D CHARGE model |
+| `R_F` [kΩ] | **11.36** (1.08×) | **5.65** (0.54×) | 10.55 | sim 109 reproduces the book's R_F at this bias; lighter-doped sim 63 conducts more → lower R_F |
+| `C_diff` [pF] | **3.40** (9.8×) | **4.20** (12×) | 0.347 | book "C_F" is τ/R_F with an optimistic short τ; the real diffusion cap is ~10× larger |
+| `C_dep` [pF] | **0.0243** | **0.0236** | — | depletion cap (book has no separate value) |
+| `τ = R_F·C_diff` [ns] | **38.7** | **23.7** | 3.66 | sim effective lifetime is ~10× the book's assumed τ |
+| `f_3dB,diff` [GHz] | **0.775** | **0.613** | 6.25 | REAL forward-injection BW — ~8–10× slower than the book number |
+| `f_3dB,dep` [GHz] | **108** | **109** | — | depletion-limited (reverse bias only) |
+
+**Key findings (report, don't fudge):**
+1. **R_S, R_F, C_diff, f_3dB now differ between designs** (e.g. f_diff 0.775 vs
+   0.613 GHz; R_S 10.3 vs 11.9 Ω) — as physics requires. The old code forced both
+   to `R_S = 23.31 Ω` and a near-identical f_3dB; that was wrong.
+2. **R_S ≈ 10–12 Ω from the sim, vs book 23.31 Ω.** The 2D CHARGE model captures
+   only the intrinsic series path; the book's larger R_S most likely includes the
+   external contact/metal/probe resistance that is outside the 2D cross-section.
+3. **The real modulation BW is ~0.6–0.8 GHz, not 6.25 GHz.** The book's 6.25 GHz /
+   0.347 pF correspond to reading the cap at a *lower* bias (~0.60 V) while reading
+   R_F at ~0.70 V — i.e. cross-bias mixing (the long-standing §3.6 puzzle, now
+   resolved). At a single consistent bias the diffusion cap is ~10× larger and the
+   BW ~8× lower. This is the honest forward-injection result.
+4. The DC `dV/dI` cross-check from the cached 25-point sweep is **unreliable**
+   (steep exponential, coarse grid → off by ~10–200×); the SSAC low-f `R_F` is the
+   trustworthy value and independently lands on the book's R_F for sim 109.
+
+### 10.4 Stage B/C keyed off the computed BW
+The equalizer is now sized from `f_3dB,diff`: `η = 100 GHz / f_3dB,diff`
+(sim 109: η=129, IL=42 dB; sim 63: η=163, IL=44 dB). The honest consequence —
+**a forward-injection device needs ~42–44 dB of equalization to reach 100 Gbps.**
+Stage C confirms it: with `LPF_1`/`PIN_DEV` cutoff = `f_3dB,diff`, the baseline eye
+is completely dead at 100 Gbps, and the equalized eye (corrected H_eq, AMP_1 gain =
+IL) still opens cleanly. Deliverables per design: `eye_comparison.png`, `bode.png`,
+**`zy_bode.png`** (Z/Y mag+phase + C(f) two-cap signature), `circuit_params.json`
+(now carries `R_S, R_F, C_diff, C_dep, tau_ns, f_3dB_diff, f_3dB_dep`, the `book`
+reference block, and the `_method` string).
+
+### 10.5 Code
+- `eye_lib.extract_small_signal(f, Z_reported, norm, L)` — the one-normalization
+  reader (returns the scalars + device-scaled f/Z/Y/C arrays).
+- `run_specific_eye.extract_ssac_circuit` — one forward-bias SSAC sweep
+  (1 Hz–200 GHz), returns the op-bias picture + the per-bias `bias_table`.
+- `run_specific_eye.plot_zy_bode` — the Z/Y Bode + C(f).
+- `print_bias_sweep` / `print_computed_vs_book` — the bias-dependence and
+  computed-vs-book printouts. `R_S_BOOK` forcing and the sim-109 pass/fail table
+  are removed; `BOOK` is used only for the comparison printout.

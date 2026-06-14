@@ -24,11 +24,28 @@ Flags: `--target-bw` (default 100e9), `--rf-bias` (default 0.79 V),
 
 ---
 
-## Runs
+## Runs (self-consistent extraction — all values per-sim, no book forced)
 
-| sim_id | status | V_pi | C_F | R_F | R_S | f_3dB | eyes |
-|---|---|---|---|---|---|---|---|
-| 109 (reference) | ✅ all 7 sec-6 checks PASS | 0.862 V | 0.331 pF | 11.06 kΩ | 23.31 Ω (book) | 6.55 GHz | baseline closed / equalized open @100 Gbps |
+Stage A is a fully sim-computed small-signal extraction (one forward-bias SSAC
+sweep, one length normalization, everything off the same Y_device). See
+`results_archive/eye_109/WORKLOG.md` sec 10. Op bias 0.70 V.
+
+| sim_id | V_pi | R_S | R_F | C_diff | C_dep | τ | f_3dB,diff | f_3dB,dep | eyes |
+|---|---|---|---|---|---|---|---|---|---|
+| 109 | 0.862 V | 10.33 Ω | 11.36 kΩ | 3.40 pF | 0.0243 pF | 38.7 ns | 0.775 GHz | 108 GHz | baseline dead / equalized open @100 Gbps |
+| 63  | 0.863 V | 11.85 Ω | 5.65 kΩ | 4.20 pF | 0.0236 pF | 23.7 ns | 0.613 GHz | 109 GHz | baseline dead / equalized open @100 Gbps |
+
+The values **differ per design** (R_S, R_F, C_diff, f_3dB all change) — physics, not
+the old forced `R_S = 23.31 Ω`. Computed-vs-book: R_S ~half book (book includes
+external contact R outside the 2D model); R_F matches book at this bias for 109;
+C_diff ~10× book and f_3dB,diff ~8–10× lower (the book's 6.25 GHz/0.347 pF are
+cross-bias values). The real forward-injection BW is ~0.6–0.8 GHz, so 100 Gbps
+needs ~42–44 dB of equalization.
+
+> Historical note: an earlier "pragmatic per-param" Stage A reproduced the book
+> Table-3 numbers by forcing `R_S = 23.31 Ω` and reading C_F as the depletion cap.
+> That is retired — it hid the per-design physics. See eye_109/WORKLOG.md sec 8 (old)
+> vs sec 10 (current).
 
 ---
 
@@ -49,17 +66,22 @@ Flags: `--target-bw` (default 100e9), `--rf-bias` (default 0.79 V),
   (vs ~25 min on the auto-refined ~78k-element production mesh).
 - Kill the device-engine CHILD process when aborting (orphans keep burning CPU).
 
-### Units / normalization (the hard-won verdict)
-The book's Table-3 small-signal triple is **cross-bias and cross-normalization** —
-it cannot be reproduced from one self-consistent extraction. Pragmatic per-param
-policy (see `run_specific_eye.py` header + `eye_109/WORKLOG.md` §8):
-- **C_F** = SSAC high-frequency reactance (depletion/junction cap), flat ~0.33 pF
-  over freq & bias, **no length scaling** → reproduces book 0.347 pF within ~5%.
-  (Quasi-static `dQ/dV·L` only hits 0.347 pF by coincidence on a steep ramp.)
-- **R_F** = `(dV/dI)/L` on the forward branch, log-interpolated at a **defined**
-  forward operating bias (0.79 V; book R_F=10.55 kΩ sits there, not at V_pi).
-- **R_S** = book value 23.31 Ω. SSAC high-f Re(Z) ≈ 0.13–0.18 Ω and does NOT scale
-  to 23.31 Ω under any single convention — **documented caveat**. `f_3dB` inherits it.
+### Units / normalization (the self-consistent verdict)
+ONE consistent 2D→device length normalization is applied to the WHOLE impedance:
+`Z_device(ω) = Z_reported(ω)·(norm/L)` (norm = 0.01 m = 1 cm; L = device length).
+Then R_S, R_F, C_diff, C_dep are all read off the same `Y_device = 1/Z_device`
+(`eye_lib.extract_small_signal`). R scales up by norm/L (×13.3 for L=0.752 mm), C
+scales down by L/norm, so `τ = R_F·C_diff` is scaling-invariant. **No book values
+are forced.** The result differs per design (see Runs table).
+
+The book's Table-3 triple is **cross-bias** — its `R_F=10.55 kΩ` is at ~0.70 V but
+its `C_F=0.347 pF`/`f_3dB=6.25 GHz` correspond to a *lower* bias (~0.60 V). At one
+consistent bias the diffusion cap is ~10× larger (real f_3dB,diff ~0.6–0.8 GHz).
+Book `R_S=23.31 Ω` > sim ~10–12 Ω → the book includes external contact/metal R that
+the 2D CHARGE model does not.
+
+(Retired earlier policy: forcing `R_S=23.31 Ω` (book) and reading C_F as the
+unscaled depletion cap to hit Table 3 — it hid the per-design physics.)
 
 ### Equalizer (book corrections)
 - Book eq (20) for `H_eq` is wrong (gives `H_eq(0)=1`). Correct consistent form:
