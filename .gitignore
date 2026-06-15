@@ -69,7 +69,15 @@ Lumerical_Files/*
 
 # Simulation CSV files (ignore results but keep structure)
 simulation csv/*.csv
+simulation csv/raw/
 !simulation csv/.gitkeep
+
+# Per-sim_id run outputs (data, not source): wavelength sweeps and verify runs
+results_archive/wavelength_*/
+results_archive/verify_*/
+# Old Sim-109-only wavelength sweep, superseded by system/run_specific_wavelength.py
+# (kept on disk for reference, not version-controlled)
+wavelength_stability/
 
 # IDE and editor files
 .vscode/
@@ -136,6 +144,9 @@ dmypy.json
 # Claude Code
 .claude/
 CLAUDE.md
+
+# eye_diagram_tool: local-only (kept on disk, never version-controlled)
+eye_diagram_tool/
 
 # Lumerical API source (copyright, large)
 lomapi_python/

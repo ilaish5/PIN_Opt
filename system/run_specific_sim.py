@@ -32,7 +32,7 @@ import pandas as pd  # noqa: E402
 import config            # noqa: E402
 import run_simulation    # noqa: E402
 
-PARAM_COLS = list(config.SWEEP_PARAMETERS.keys())  # w_r, h_si, doping, lambda, S, length
+PARAM_COLS = list(config.SWEEP_PARAMETERS.keys())  # w_r, h_si, doping, S, length (lambda fixed)
 ARCHIVE_DIR = os.path.join(BASE_DIR, "results_archive")
 DEFAULT_CSV = config.RESULTS_CSV_FILE              # offered as the Enter-default
 TOLERANCE = 0.01                                   # pass if within 1% of the record

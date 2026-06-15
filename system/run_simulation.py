@@ -135,6 +135,11 @@ def run_row(row, sim_id=None, is_last=False):
     if sim_id is None:
         sim_id = int(params.get('sim_id', 0))
 
+    # Inject fixed (non-optimized) parameters, e.g. lambda=1310nm, so downstream
+    # consumers (FDE setup, optical processing, result record) always receive them.
+    for name, value in config.FIXED_PARAMETERS.items():
+        params.setdefault(name, value)
+
     params = sim_handler.snap_params_dict(params)
     sim_start_time = time.time()
 

@@ -43,7 +43,7 @@ class TestGenerateLhsSamples:
 
         df = generate_lhs_samples(start_sim_id=1)
 
-        expected_cols = ['sim_id', 'w_r', 'h_si', 'doping', 'S', 'lambda', 'length']
+        expected_cols = ['sim_id', 'w_r', 'h_si', 'doping', 'S', 'length']
         for col in expected_cols:
             assert col in df.columns, f"Missing column: {col}"
 
@@ -98,7 +98,7 @@ class TestGenerateLhsSamples:
         df2 = generate_lhs_samples(start_sim_id=1)
 
         # Compare parameter columns (not sim_id since that might differ)
-        param_cols = ['w_r', 'h_si', 'doping', 'S', 'lambda', 'length']
+        param_cols = ['w_r', 'h_si', 'doping', 'S', 'length']
         for col in param_cols:
             assert np.allclose(df1[col].values, df2[col].values), \
                 f"Column {col} should be reproducible with same seed"
@@ -150,7 +150,7 @@ class TestGenerateLhsSamples:
         df2 = generate_lhs_samples(start_sim_id=1)
 
         # At least one parameter should be different
-        param_cols = ['w_r', 'h_si', 'doping', 'S', 'lambda', 'length']
+        param_cols = ['w_r', 'h_si', 'doping', 'S', 'length']
         all_same = all(np.allclose(df1[col].values, df2[col].values)
                        for col in param_cols)
         assert not all_same, "Different seeds should produce different samples"
@@ -176,7 +176,7 @@ class TestLhsProperties:
         df = generate_lhs_samples(start_sim_id=1)
 
         # For each parameter, values should be spread across the range
-        for param_name in ['w_r', 'h_si', 'doping', 'S', 'lambda', 'length']:
+        for param_name in ['w_r', 'h_si', 'doping', 'S', 'length']:
             values = df[param_name].values
             # Normalize to [0, 1]
             min_val = values.min()
@@ -198,7 +198,7 @@ class TestLhsProperties:
 
         df = generate_lhs_samples(start_sim_id=1)
 
-        param_cols = ['w_r', 'h_si', 'doping', 'S', 'lambda', 'length']
+        param_cols = ['w_r', 'h_si', 'doping', 'S', 'length']
         # Check for duplicates
         df_params = df[param_cols]
         n_unique = len(df_params.drop_duplicates())
