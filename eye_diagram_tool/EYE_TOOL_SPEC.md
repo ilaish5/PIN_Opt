@@ -55,13 +55,31 @@ From a fresh run of the design's params:
 - **`V_pi`** — from FDE: `data_processor.calculate_v_pi` (interp of |Δφ|(V) at π).
 - **`f_3dB`** — book eq (18)/(45): `f_3dB = 1 / (2π (R_S + R_drv) C_F)`, with `R_drv = 50 Ω`.
 
-> **UNITS CAVEAT (critical):** CHARGE here appears to report current **per unit
-> length** (A/m). The per-device differential resistance is therefore
-> `R = (dV/dI_from_CHARGE) / L`. This was validated empirically: dividing by
-> `L = 0.752 mm` makes `R_F` cross `10.55 kΩ` near `V_pi` for sim 109 (without
-> dividing it would be ~7.9 Ω, far from the book). The same `/L` applies to `R_S`
-> from SSAC (`Z` would be Ω·m). **Verify the convention** by checking the CHARGE
-> solver's norm/2D-length setting AND by reproducing Table 3 (§6).
+> **UNITS / NORMALIZATION (critical — must resolve before trusting R_F/R_S):**
+> The CHARGE solver is 2D and reports extensive quantities (`I`, `Q`) normalized
+> to its **`norm length`**, which is **`0.01 m` = 1 cm** in this `.ldev` (probe
+> confirmed), NOT the device length `L = 0.752 mm`. Everything CHARGE reports is
+> therefore **per 1 cm** (consistent with loss in dB/**cm** and `C_total` in
+> pF/**cm**). To get true **device** values scale by `L[cm]`:
+> - `C_F_dev = C_at_v_pi[pF/cm] × L[cm]`  → 0.3471 pF for sim 109 ✓ (this one is correct as written above).
+> - Resistances scale **inversely** with length: `R_dev = R_per_cm / L[cm]`, i.e.
+>   from the terminal current `R_F_dev = (dV/dI_reported) × (norm_length / L)`
+>   `= (dV/dI) × (0.01 / 0.000752) ≈ (dV/dI) × 13.3`. Same scaling for `R_S` from SSAC.
+>
+> ⚠️ The earlier offline check (`analysis/rd_vs_bias.py`) used `(dV/dI)/L[m]`
+> (≈ ×1330), i.e. it implicitly assumed `norm length = 1 m`. That is **100×**
+> larger than the `norm_length = 1 cm` scaling. So the book's `R_F = 10.55 kΩ`
+> may be **mis-normalized by ~100×** (true device `R_F` could be ~105 Ω).
+>
+> **DECISIVE TEST (do this first):** the carrier lifetime is a material input
+> (`capture tau n` / `capture tau p` on the CHARGE solver). From eq (17)
+> `τ = R_F · C_F`. Read `capture tau` via `getnamed` and compare:
+>   - `τ ≈ 3.66 ns` ⇒ `R_F = 10.55 kΩ` is correct (book right).
+>   - `τ ≈ tens of ps` ⇒ `R_F ≈ 105 Ω` is correct (book mis-normalized ×100).
+> Resolve the normalization against BOTH this `τ` check and the Table 3 values,
+> pick the scaling that is self-consistent, and **record the verdict in the
+> WORKLOG** (incl. whether the book's `R_F`/`R_Eq` need a correction factor).
+> Note `R_Eq = R_F·η` and the equalizer zero `1/(R_Eq C_Eq)` inherit any `R_F` error.
 
 ### Stage B — design the equalizer for 100 Gbps
 Book equations (§3.2). Given the device (`R_F, C_F, f_3dB`) and a target:

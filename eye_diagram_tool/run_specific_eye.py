@@ -22,10 +22,12 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.dirname(HERE)
-if HERE not in sys.path:
-    sys.path.insert(0, HERE)
+HERE = os.path.dirname(os.path.abspath(__file__))   # eye_diagram_tool/
+ROOT = os.path.dirname(HERE)                          # PS_Opt_V2/
+# eye_lib lives here; config/sim_handler/data_processor live in system/.
+for _p in (HERE, os.path.join(ROOT, "system")):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 
 import config
 import sim_handler

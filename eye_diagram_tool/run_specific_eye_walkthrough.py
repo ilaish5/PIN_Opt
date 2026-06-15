@@ -24,9 +24,12 @@ import argparse
 import numpy as np
 import pandas as pd
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-if HERE not in sys.path:
-    sys.path.insert(0, HERE)
+HERE = os.path.dirname(os.path.abspath(__file__))   # eye_diagram_tool/
+ROOT = os.path.dirname(HERE)                          # PS_Opt_V2/
+# eye_lib + run_specific_eye live here; config/sim_handler/data_processor in system/.
+for _p in (HERE, os.path.join(ROOT, "system")):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 
 import config
 import sim_handler
