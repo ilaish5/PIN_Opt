@@ -45,8 +45,8 @@ HIDE_GUI = True         # Hide Lumerical GUI
 DEBUG = False           # Step-by-step analysis mode
 SHOW_PLOTS = False      # Display plots after extraction
 RUN_SIMULATION = True   # Run actual Lumerical simulations (False = setup only, for testing)
-SKIP_LHS = True        # Skip LHS, use existing params.csv
-SKIP_INITIAL_SIMS = True   # Skip LHS + initial sims, use existing result.csv for BO
+SKIP_LHS = False       # Generate fresh LHS samples (full clean run)
+SKIP_INITIAL_SIMS = False  # Run LHS + initial sims, then BO (full clean run)
 
 # --- Cooling Delay ---
 DELAY_BETWEEN_RUNS = 0  # seconds between runs (0 = no delay)
