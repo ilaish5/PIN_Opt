@@ -229,6 +229,52 @@ def make_plots(df, sim_id, anchor_nm, fixed_drive_v, plots_dir):
     plt.close(fig)
     print(f"saved {os.path.relpath(out, PROJECT)}")
 
+    make_deviation_plot(df, anchor_nm, plots_dir)
+
+
+def make_deviation_plot(df, anchor_nm, plots_dir):
+    """Single plot: percent deviation of V_pi and loss from the anchor wavelength.
+
+    X = wavelength (nm); Y = % deviation vs the design point; two lines (V_pi, alpha).
+    No title — caption is added downstream by the user. Units in square brackets.
+    """
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+
+    df = df.sort_values('lambda_nm')
+    anchor = df[df['lambda_nm'].round(2) == round(anchor_nm, 2)]
+    if not len(anchor):
+        print("deviation plot skipped: anchor wavelength not in sweep")
+        return
+    a = anchor.iloc[0]
+
+    dev_v = (df['v_pi_V'] / a['v_pi_V'] - 1.0) * 100.0
+    dev_a = (df['loss_at_v_pi_dB_per_cm'] / a['loss_at_v_pi_dB_per_cm'] - 1.0) * 100.0
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.plot(df['lambda_nm'], dev_v, 'o-', color=C_PURPLE, lw=2.2, ms=6,
+            label=r'Drive voltage  $V_\pi$')
+    ax.plot(df['lambda_nm'], dev_a, 's-', color=C_GREEN, lw=2.2, ms=6,
+            label=r'Optical loss  $\alpha$')
+
+    ax.axhline(0, color='#888', lw=1, zorder=0)
+    ax.axvline(anchor_nm, color=C_GOLD, ls=':', lw=1.5)
+    ax.annotate(f'{anchor_nm:.0f} nm', xy=(anchor_nm, ax.get_ylim()[1]),
+                xytext=(2, -4), textcoords='offset points',
+                color=C_GOLD, fontweight='bold', va='top', fontsize=10)
+
+    ax.set_xlabel('Wavelength [nm]', fontsize=12)
+    ax.set_ylabel(f'Deviation from {anchor_nm:.0f} nm [%]', fontsize=12)
+    ax.grid(True, alpha=0.3)
+    ax.legend(fontsize=11, framealpha=0.9)
+
+    fig.tight_layout()
+    out = os.path.join(plots_dir, 'deviation_vs_anchor.png')
+    fig.savefig(out, dpi=200)
+    plt.close(fig)
+    print(f"saved {os.path.relpath(out, PROJECT)}")
+
 
 # ===========================================================================
 # main
