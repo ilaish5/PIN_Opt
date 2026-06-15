@@ -10,7 +10,7 @@ import numpy as np
 _BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Lumerical API paths
-LUMERICAL_API_PATH = "C:\\Program Files\\Lumerical\\v251\\api\\python"  # Lumerical Python API path
+LUMERICAL_API_PATH = "C:\\Program Files\\Lumerical\\v231\\api\\python"  # Lumerical Python API path
 LUMAPI_PATH = 'lumapi.py'  # Lumerical API module name
 
 # Project file paths (relative to PS_Opt_V2 directory)
@@ -34,7 +34,8 @@ RUN_TIMESTAMP = None  # Set at runtime by main.py
 # Columns for minimal result file (essential data only)
 MINIMAL_RESULT_COLUMNS = [
     'sim_id',
-    'w_r', 'h_si', 'doping', 'S', 'lambda', 'length',  # Input params
+    'w_r', 'h_si', 'doping', 'S', 'length',  # Input params (5D search space)
+    'lambda',                                # Fixed wavelength (recorded constant, not optimized)
     'v_pi_V', 'v_pi_l_Vmm', 'loss_at_v_pi_dB_per_cm', 'C_at_v_pi_pF_per_cm',  # Key outputs
     'max_dphi_rad', 'cost', 'kappa'  # Phase shift, BO metric & kappa
 ]
@@ -56,14 +57,21 @@ LHS_N_SAMPLES = 50  # Number of LHS samples (N_init = 10d = 50, book §3.3)
 LHS_SAMPLING_METHOD = 'optimum'  # 'random', 'maximin', or 'optimum' (smt library)
 LHS_RANDOM_SEED = None          # None = random seed
 
-# Parameter bounds (h_r = WAFER_THICKNESS - h_si)
+# Optimization/sampling space — 5 parameters (h_r = WAFER_THICKNESS - h_si).
+# Wavelength is NOT part of this space; it is fixed at 1310 nm (see FIXED_PARAMETERS).
 SWEEP_PARAMETERS = {
     'w_r':     {'min': 350e-9,  'max': 550e-9,  'unit': 'm'},    # Waveguide width (350nm - 550nm)
     'h_si':    {'min': 70e-9,   'max': 130e-9,  'unit': 'm'},    # Silicon height (70nm - 130nm)
-    'doping':  {'min': 1e17,    'max': 1e21,    'unit': 'cm^-3'},  # Doping concentration 
-    'lambda':  {'min': 1260e-9, 'max': 1360e-9, 'unit': 'm'},    # Wavelength (1.26um - 1.36um, O-Band; fixed to 1310nm via DISCRETE_PARAMETERS)
+    'doping':  {'min': 1e17,    'max': 1e21,    'unit': 'cm^-3'},  # Doping concentration
     'S':       {'min': 0,       'max': 0.8e-6,  'unit': 'm'},    # Junction offset (0nm - 800nm)
     'length':  {'min': 0.1e-3,  'max': 1.0e-3,  'unit': 'm'}     # Device length (0.1mm - 1.0mm)
+}
+
+# --- Fixed (non-optimized) Parameters ---
+# Constants injected into every simulation but NOT sampled by LHS or optimized by BO.
+# The O-band design wavelength is pinned to 1310 nm.
+FIXED_PARAMETERS = {
+    'lambda': 1310e-9,  # Wavelength (m) — fixed at 1310 nm (O-Band)
 }
 
 # --- Discrete Parameter Configuration ---
@@ -76,12 +84,8 @@ DISCRETE_PARAMETERS = {
         'values': np.arange(70e-9, 131e-9, 10e-9),  # [70nm, 80nm, 90nm, ..., 130nm] - within bounds [70nm, 130nm]
         'method': 'nearest'  # Snapping method: 'nearest' (only option currently supported)
     },
-    'lambda': {
-        'enabled': True,  # Set to False to disable discrete snapping for lambda
-        'values': np.array([1310e-9]),  # Fixed at 1310nm only
-        'method': 'nearest'  # Snapping method: 'nearest' (only option currently supported)
-    },
-    # Add more parameters here as needed (e.g., 'lambda', 'w_r', etc.)
+    # Add more parameters here as needed (e.g., 'w_r', etc.)
+    # Note: 'lambda' is fixed (see FIXED_PARAMETERS), not snapped here.
 }
 
 

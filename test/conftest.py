@@ -32,13 +32,12 @@ def sample_params():
 
 @pytest.fixture
 def sample_params_bounds():
-    """Sample parameter bounds from config."""
+    """Sample parameter bounds from config (5D search space; lambda is fixed)."""
     return {
         'w_r': {'min': 350e-9, 'max': 500e-9, 'unit': 'm'},
         'h_si': {'min': 70e-9, 'max': 130e-9, 'unit': 'm'},
         'doping': {'min': 1e17, 'max': 1e18, 'unit': 'cm^-3'},
         'S': {'min': 0, 'max': 0.8e-6, 'unit': 'm'},
-        'lambda': {'min': 1260e-9, 'max': 1360e-9, 'unit': 'm'},
         'length': {'min': 0.1e-3, 'max': 1.0e-3, 'unit': 'm'}
     }
 

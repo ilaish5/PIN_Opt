@@ -81,14 +81,42 @@ against the record with a PASS/FAIL tolerance check. The raw per-sim sweep
 (including the swept terminal current `I`) is written under
 `results_archive/verify_<id>/`.
 
-The forward-bias differential resistance can then be checked offline:
+---
+
+## Wavelength-stability (laser-drift) sweep
+
+To check how robust a recorded design is to laser-wavelength drift, re-simulate
+the **same geometry and drive** across a wavelength span centered on the design's
+own wavelength (the laser drifts; geometry and drive voltage stay fixed):
 
 ```bash
-python analysis/rd_vs_bias.py     # defaults to the verified optimum, sim_id 109
+cd system
+python run_specific_wavelength.py                       # prompts for CSV path + sim_id
+python run_specific_wavelength.py --sim-id 109 --span 10 --step 1
+python run_specific_wavelength.py --sim-id 109 --force-charge   # re-solve carriers
 ```
 
-This derives `r_d = (dV/dI) / L` from the raw `I(V)` sweep and plots it against
-the small-signal `R_F` (book Table 3), saving `analysis/rd_vs_bias_109.png`.
+| Flag | Default | Meaning |
+|------|---------|---------|
+| `--csv` | `simulation csv/result.csv` | results file to read the design from |
+| `--sim-id` | *(prompts)* | which recorded design to sweep |
+| `--span` | `10` | half-width of the sweep around the design wavelength (nm) |
+| `--step` | `1` | wavelength step (nm) |
+| `--force-charge` | off | re-solve carriers even if `charge_data.mat` exists |
+
+CHARGE (carrier injection) is solved **once** — carriers do not depend on the
+optical wavelength — and only the FDE mode solve repeats per wavelength. At each
+wavelength the script recomputes `V_pi`, `V_pi*L`, optical loss and the phase
+shift, using the same math as the main pipeline. At the design wavelength it
+prints a PASS/FAIL anchor check (default tolerance ±2%) against the recorded
+`V_pi*L` and loss, confirming the sweep reproduces the original sim.
+
+Outputs land in `results_archive/wavelength_<sim_id>/`:
+`stability_results.csv`, per-wavelength `raw/lambda_<nm>.csv`, and
+`plots/stability_overview.png` (`V_pi*L`, loss, `V_pi`, and fixed-drive phase vs λ).
+The run is resumable — wavelengths already present in `stability_results.csv` are
+skipped. Example: `sim_id 109` over 1300–1320 nm (±10 nm) gives `V_pi*L` drift
+< ±0.1% and loss drift < ±0.9%, with all points valid.
 
 ---
 
@@ -182,6 +210,7 @@ PS_Opt_V2/
 │   ├── cost.py                # Piecewise quadratic
 │   ├── run_simulation.py      # Per-row orchestration, CSV I/O
 │   ├── run_specific_sim.py    # Re-run/verify one sim_id against result.csv
+│   ├── run_specific_wavelength.py  # Laser-drift wavelength sweep for any sim_id
 │   ├── sim_handler.py         # Lumerical API
 │   └── data_processor.py      # Optical/electrical post-processing
 │
@@ -196,8 +225,7 @@ PS_Opt_V2/
 ├── analysis/                  # Post-optimization analysis of the best design (Sim 109)
 │   ├── plots.ipynb            # Project-book figures from result.csv
 │   ├── RC_design_Loss.m       # RC equalizer design (loss → bandwidth trade-off)
-│   ├── plot_eye_diagram_interconnect.py  # Run .icp transient + plot eye diagrams
-│   └── rd_vs_bias.py          # Forward-bias r_d = (dV/dI)/L vs R_F check
+│   └── plot_eye_diagram_interconnect.py  # Run .icp transient + plot eye diagrams
 ├── results_archive/
 │   └── best_run_109/          # Best BO run summary (result.csv, result_full.csv)
 ├── test/                      # Pytest suite
