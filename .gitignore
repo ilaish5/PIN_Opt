@@ -145,8 +145,8 @@ dmypy.json
 .claude/
 CLAUDE.md
 
-# eye_diagram_tool discovery scratch (local WIP probes + large .ldev/.ich/.npz)
-eye_diagram_tool/ssac_scratch/
+# eye_diagram_tool: local-only (kept on disk, never version-controlled)
+eye_diagram_tool/
 
 # Lumerical API source (copyright, large)
 lomapi_python/
