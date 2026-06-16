@@ -235,6 +235,8 @@ def make_plots(df, sim_id, anchor_nm, fixed_drive_v, plots_dir):
 def make_deviation_plot(df, anchor_nm, plots_dir):
     """Single plot: percent deviation of V_pi and loss from the anchor wavelength.
 
+    Geometry (including length L) is fixed across the sweep, so V_pi*L would carry
+    no information beyond V_pi — the plot uses V_pi, the quantity that actually varies.
     X = wavelength (nm); Y = % deviation vs the design point; two lines (V_pi, alpha).
     No title — caption is added downstream by the user. Units in square brackets.
     """
@@ -264,8 +266,8 @@ def make_deviation_plot(df, anchor_nm, plots_dir):
                 xytext=(2, -4), textcoords='offset points',
                 color=C_GOLD, fontweight='bold', va='top', fontsize=10)
 
-    ax.set_xlabel('Wavelength [nm]', fontsize=12)
-    ax.set_ylabel(f'Deviation from {anchor_nm:.0f} nm [%]', fontsize=12)
+    ax.set_xlabel('Wavelength (nm)', fontsize=12, fontweight='bold')
+    ax.set_ylabel(f'Deviation from {anchor_nm:.0f} nm (%)', fontsize=12, fontweight='bold')
     ax.grid(True, alpha=0.3)
     ax.legend(fontsize=11, framealpha=0.9)
 
