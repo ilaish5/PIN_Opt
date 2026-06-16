@@ -16,7 +16,7 @@ everything it creates lands in results_archive/wavelength_<sim_id>/.
 
 Run on the VM (Lumerical required), from the PS_Opt_V2 directory:
     python system/run_specific_wavelength.py
-    python system/run_specific_wavelength.py --sim-id 109 --span 10 --step 1
+    python system/run_specific_wavelength.py --sim-id 109 --span 50 --step 5
     python system/run_specific_wavelength.py --force-charge   (re-solve carriers)
 """
 
@@ -53,8 +53,15 @@ ARCHIVE_DIR = os.path.join(PROJECT, "results_archive")
 DEFAULT_CSV = config.RESULTS_CSV_FILE
 TOLERANCE = 0.02                                    # anchor pass band vs the record
 
-DEFAULT_SPAN_NM = 10.0      # sweep center ± span  (1310 -> 1300..1320)
-DEFAULT_STEP_NM = 1.0
+DEFAULT_SPAN_NM = 50.0      # sweep center ± span  (1310 -> 1260..1360, full O band)
+DEFAULT_STEP_NM = 5.0       # 5 nm step -> 21 points across the O band
+
+# DEBUG: when True the FDE solve opens the Lumerical GUI for EVERY wavelength so the
+# sweep can be watched live; False runs headless. (Per-wavelength set still honored.)
+DEBUG_SHOW_GUI = False
+# Wavelengths (nm) for which the FDE solve opens the GUI — add e.g. 1260.0 to inspect
+# a hanging point. Empty => fully headless.
+DEBUG_GUI_NM = set()
 
 COLUMNS = ['lambda_pm', 'lambda_nm', 'v_pi_V', 'v_pi_l_Vmm',
            'loss_at_v_pi_dB_per_cm', 'max_dphi_rad', 'dphi_fixed_drive_over_pi',
@@ -131,7 +138,12 @@ def run_charge(params, charge_data_file):
 def run_fde(params, lam_nm, charge_data_file):
     """Solve the FDE voltage sweep at one wavelength; return complex neff(V)."""
     lam_m = lam_nm * 1e-9
-    fde = sim_handler.lumapi.MODE(hide=True)
+    # DEBUG: open the Lumerical GUI for the listed wavelengths so a stuck/hidden
+    # mode solve (or a blocking dialog) becomes visible. Empty set => always hidden.
+    show_gui = DEBUG_SHOW_GUI or round(lam_nm, 2) in DEBUG_GUI_NM
+    if show_gui:
+        print(f"  [debug] opening MODE GUI for {lam_nm:.1f} nm")
+    fde = sim_handler.lumapi.MODE(hide=not show_gui)
     try:
         fde.load(config.FDE_SIM_FILE)
         sim_handler.set_fde_parameters(fde, dict(params, **{'lambda': lam_m}))
@@ -267,7 +279,7 @@ def make_deviation_plot(df, anchor_nm, plots_dir):
                 color=C_GOLD, fontweight='bold', va='top', fontsize=10)
 
     ax.set_xlabel('Wavelength (nm)', fontsize=12, fontweight='bold')
-    ax.set_ylabel(f'Deviation from {anchor_nm:.0f} nm (%)', fontsize=12, fontweight='bold')
+    ax.set_ylabel(f'Performance Deviation from {anchor_nm:.0f} nm (%)', fontsize=12, fontweight='bold')
     ax.grid(True, alpha=0.3)
     ax.legend(fontsize=11, framealpha=0.9)
 
@@ -287,9 +299,9 @@ def main():
     ap.add_argument('--csv', default=None, help='results CSV path')
     ap.add_argument('--sim-id', type=int, default=None)
     ap.add_argument('--span', type=float, default=DEFAULT_SPAN_NM,
-                    help='half-width of the sweep around the design wavelength, nm (default 10)')
+                    help='half-width of the sweep around the design wavelength, nm (default 50)')
     ap.add_argument('--step', type=float, default=DEFAULT_STEP_NM,
-                    help='wavelength step in nm (default 1)')
+                    help='wavelength step in nm (default 5)')
     ap.add_argument('--force-charge', action='store_true',
                     help='re-solve carriers even if charge_data.mat exists')
     args = ap.parse_args()
