@@ -23,6 +23,28 @@ class SimulationError(Exception):
 
 
 # ============================================================================
+# Stage progress / step-by-step debug
+# ============================================================================
+
+def _stage(label):
+    """Announce a pipeline stage on the terminal.
+
+    Printing is opt-in and off by default, so main.py's batch runs stay quiet:
+    it activates only when a caller sets config.SHOW_PROGRESS = True at runtime
+    (e.g. run_specific_sim.py) or when config.DEBUG is on. In DEBUG mode it also
+    blocks for Enter, so each step can be inspected before it runs.
+    """
+    if not (config.DEBUG or getattr(config, "SHOW_PROGRESS", False)):
+        return
+    print(f"   -> {label}", flush=True)
+    if config.DEBUG:
+        try:
+            input("      [DEBUG] Enter to proceed... ")
+        except EOFError:
+            pass
+
+
+# ============================================================================
 # Discrete parameter snapping
 # ============================================================================
 
@@ -202,7 +224,9 @@ def set_charge_parameters(charge_session, params, charge_file_path):
 def run_charge_simulation(charge_session):
     """Run CHARGE and verify results were produced."""
     charge_session.save(config.CHARGE_SIM_FILE)
+    _stage("CHARGE: meshing")
     charge_session.mesh()
+    _stage("CHARGE: running solver")
     charge_session.run()
 
     result = charge_session.getresult("CHARGE::monitor_charge", "total_charge")
@@ -251,7 +275,9 @@ def set_fde_parameters(fde_session, params):
 def run_fde_sweep(fde_session):
     """Run FDE voltage sweep and verify results."""
     fde_session.save(config.FDE_SIM_FILE)
+    _stage("FDE: meshing")
     fde_session.mesh()
+    _stage("FDE: running voltage sweep")
     fde_session.runsweep("voltage")
 
     result = fde_session.getsweepresult("voltage", "neff")
@@ -279,19 +305,21 @@ def run_full_simulation(params, sim_id=None):
     if lumapi is None:
         raise SimulationError("INIT", "lumapi not available")
 
-    hide_gui = config.HIDE_GUI and not config.DEBUG
+    hide_gui = config.HIDE_GUI  # GUI is controlled solely by HIDE_GUI, independent of DEBUG
     charge_data_path = config.CHARGE_DATA_FILE
     result = {}
 
     charge = None
     try:
         try:
+            _stage("CHARGE: opening session")
             charge = lumapi.DEVICE(hide=hide_gui)
             charge.load(config.CHARGE_SIM_FILE)
         except Exception as e:
             raise SimulationError("CHARGE_SETUP", f"open/load CHARGE: {e}", e)
 
         try:
+            _stage("CHARGE: setting geometry & doping")
             set_charge_parameters(charge, params, charge_data_path)
         except Exception as e:
             raise SimulationError("CHARGE_SETUP", f"set CHARGE params: {e}", e)
@@ -306,6 +334,7 @@ def run_full_simulation(params, sim_id=None):
                 raise SimulationError("CHARGE_RUN", f"CHARGE run: {e}", e)
 
         try:
+            _stage("CHARGE: extracting carrier data")
             result.update(extract_raw_charge_data(charge))
             result['charge_time'] = charge_time
         except Exception as e:
@@ -320,17 +349,20 @@ def run_full_simulation(params, sim_id=None):
     fde = None
     try:
         try:
+            _stage("FDE: opening session")
             fde = lumapi.MODE(hide=hide_gui)
             fde.load(config.FDE_SIM_FILE)
         except Exception as e:
             raise SimulationError("FDE_SETUP", f"open/load FDE: {e}", e)
 
         try:
+            _stage("FDE: setting geometry & wavelength")
             set_fde_parameters(fde, params)
         except Exception as e:
             raise SimulationError("FDE_SETUP", f"set FDE params: {e}", e)
 
         try:
+            _stage("FDE: importing CHARGE data")
             import_charge_data(fde, charge_data_path)
         except Exception as e:
             raise SimulationError("FDE_SETUP", f"import CHARGE→FDE: {e}", e)
@@ -345,6 +377,7 @@ def run_full_simulation(params, sim_id=None):
                 raise SimulationError("FDE_RUN", f"FDE sweep: {e}", e)
 
         try:
+            _stage("FDE: extracting neff")
             result.update(extract_raw_optical_data(fde))
             result['fde_time'] = fde_time
         except Exception as e:

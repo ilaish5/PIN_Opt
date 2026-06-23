@@ -116,5 +116,3 @@ MAX_VALID_COST = (FOM_WEIGHTS['loss'] * (ALPHA_MAX / TARGETS['loss'])**2
 C_BASE = MAX_VALID_COST                  # Failed-device baseline (Eq. 35)
 BETA_ELEC = (9.0 * C_BASE) / (np.pi**2)  # Quadratic electrical penalty coefficient (Eq. 37)
 BETA_OPT  = (9.0 * C_BASE) / ALPHA_MAX   # Linear optical penalty coefficient (Eq. 39)
-
-this is github test

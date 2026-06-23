@@ -38,6 +38,41 @@ DEFAULT_CSV = config.RESULTS_CSV_FILE              # offered as the Enter-defaul
 TOLERANCE = 0.01                                   # pass if within 1% of the record
 
 
+def ask_yes_no(question, default=False):
+    """Prompt a Y/N question. Enter accepts `default`."""
+    suffix = "[y/N]" if not default else "[Y/n]"
+    while True:
+        raw = input(f"{question} {suffix}: ").strip().lower()
+        if raw == "":
+            return default
+        if raw in ("y", "yes"):
+            return True
+        if raw in ("n", "no"):
+            return False
+        print("  please answer y or n")
+
+
+def ask_run_modes():
+    """Ask for the interactive run flags and apply them to the runtime config.
+
+    These live here (not in config.py) so the batch optimizer is unaffected:
+      - DEBUG: pause for Enter before every CHARGE/FDE stage and before saving.
+      - HIDE_GUI: show the Lumerical GUI windows during the run.
+    Per-stage progress logging (mesh/charge/fde) is always enabled for this
+    script via SHOW_PROGRESS.
+    """
+    print("\n--- Run modes ---")
+    debug = ask_yes_no("Debug mode (pause for Enter before each step)?", default=False)
+    show_gui = ask_yes_no("Show Lumerical GUI during the run?", default=False)
+
+    config.DEBUG = debug
+    config.HIDE_GUI = not show_gui
+    config.SHOW_PROGRESS = True  # always stream stage progress to the terminal
+
+    print(f"  debug={'ON' if debug else 'off'}   "
+          f"gui={'ON' if show_gui else 'off'}   progress=ON\n")
+
+
 def ask_results_csv():
     """Prompt for a results-file path (Enter = canonical result.csv)."""
     while True:
@@ -89,6 +124,7 @@ def compare(label, got, ref):
 
 
 def main():
+    ask_run_modes()
     src = ask_results_csv()
     df = pd.read_csv(src)
     if "sim_id" not in df.columns:

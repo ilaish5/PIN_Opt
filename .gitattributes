@@ -1,3 +1,15 @@
+# Normalize all text files to LF in the repository (prevents CRLF churn on Windows)
+* text=auto eol=lf
+
+# Large Lumerical binaries via Git LFS (never line-ending converted)
 *.ldev filter=lfs diff=lfs merge=lfs -text
 *.lms filter=lfs diff=lfs merge=lfs -text
 *.icp filter=lfs diff=lfs merge=lfs -text
+
+# Other binary assets — leave bytes untouched
+*.ich binary
+*.mat binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.pdf binary
