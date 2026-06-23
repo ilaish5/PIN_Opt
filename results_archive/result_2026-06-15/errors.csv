@@ -1,0 +1,84 @@
+sim_id,stage,error_type,error_message,traceback,timestamp,params
+267,CHARGE_SETUP,LumApiError,'Error:  line -1:',"Traceback (most recent call last):
+  File ""C:\Mac\Home\Desktop\PIN_MZ\PS_Opt_V2\system\sim_handler.py"", line 645, in run_full_simulation
+    charge.load(config.CHARGE_SIM_FILE)
+  File ""C:\Program Files\Lumerical\v231\api\python\lumapi.py"", line 1172, in <lambda>
+    method = (lambda x: lambda self, *args: appCall(self, x, args))(name)
+                                            ^^^^^^^^^^^^^^^^^^^^^^
+  File ""C:\Program Files\Lumerical\v231\api\python\lumapi.py"", line 819, in appCall
+    raise LumApiError(message)
+lumapi.LumApiError: 'Error:  line -1:'
+",2026-04-17 03:14:55,"{""w_r"": 3.9202485262359276e-07, ""h_si"": 9e-08, ""doping"": 8.923651597839642e+19, ""S"": 6.019273973585616e-07, ""lambda"": 1.26e-06, ""length"": 0.00014880256473290819, ""sim_id"": 267}"
+268,CHARGE_SETUP,LumApiError,'Error:  line -1:',"Traceback (most recent call last):
+  File ""C:\Mac\Home\Desktop\PIN_MZ\PS_Opt_V2\system\sim_handler.py"", line 645, in run_full_simulation
+    charge.load(config.CHARGE_SIM_FILE)
+  File ""C:\Program Files\Lumerical\v231\api\python\lumapi.py"", line 1172, in <lambda>
+    method = (lambda x: lambda self, *args: appCall(self, x, args))(name)
+                                            ^^^^^^^^^^^^^^^^^^^^^^
+  File ""C:\Program Files\Lumerical\v231\api\python\lumapi.py"", line 819, in appCall
+    raise LumApiError(message)
+lumapi.LumApiError: 'Error:  line -1:'
+",2026-04-17 03:15:24,"{""w_r"": 4.069251986575997e-07, ""h_si"": 9e-08, ""doping"": 8.700971217187545e+19, ""S"": 5.084326369518316e-07, ""lambda"": 1.26e-06, ""length"": 0.00015001428498786202, ""sim_id"": 268}"
+269,CHARGE_SETUP,LumApiError,'Error:  line -1:',"Traceback (most recent call last):
+  File ""C:\Mac\Home\Desktop\PIN_MZ\PS_Opt_V2\system\sim_handler.py"", line 645, in run_full_simulation
+    charge.load(config.CHARGE_SIM_FILE)
+  File ""C:\Program Files\Lumerical\v231\api\python\lumapi.py"", line 1172, in <lambda>
+    method = (lambda x: lambda self, *args: appCall(self, x, args))(name)
+                                            ^^^^^^^^^^^^^^^^^^^^^^
+  File ""C:\Program Files\Lumerical\v231\api\python\lumapi.py"", line 819, in appCall
+    raise LumApiError(message)
+lumapi.LumApiError: 'Error:  line -1:'
+",2026-04-17 03:15:46,"{""w_r"": 5e-07, ""h_si"": 9e-08, ""doping"": 7.764958831617994e+19, ""S"": 1.3217528203339988e-07, ""lambda"": 1.26e-06, ""length"": 0.0001521194385727694, ""sim_id"": 269}"
+270,CHARGE_SETUP,LumApiError,'Error:  line -1:',"Traceback (most recent call last):
+  File ""C:\Mac\Home\Desktop\PIN_MZ\PS_Opt_V2\system\sim_handler.py"", line 645, in run_full_simulation
+    charge.load(config.CHARGE_SIM_FILE)
+  File ""C:\Program Files\Lumerical\v231\api\python\lumapi.py"", line 1172, in <lambda>
+    method = (lambda x: lambda self, *args: appCall(self, x, args))(name)
+                                            ^^^^^^^^^^^^^^^^^^^^^^
+  File ""C:\Program Files\Lumerical\v231\api\python\lumapi.py"", line 819, in appCall
+    raise LumApiError(message)
+lumapi.LumApiError: 'Error:  line -1:'
+",2026-04-17 03:16:11,"{""w_r"": 4.000779888013804e-07, ""h_si"": 9e-08, ""doping"": 9.038664944105218e+19, ""S"": 7.280314521995369e-07, ""lambda"": 1.26e-06, ""length"": 0.00014735750019376646, ""sim_id"": 270}"
+271,CHARGE_SETUP,LumApiError,'Error:  line -1:',"Traceback (most recent call last):
+  File ""C:\Mac\Home\Desktop\PIN_MZ\PS_Opt_V2\system\sim_handler.py"", line 645, in run_full_simulation
+    charge.load(config.CHARGE_SIM_FILE)
+  File ""C:\Program Files\Lumerical\v231\api\python\lumapi.py"", line 1172, in <lambda>
+    method = (lambda x: lambda self, *args: appCall(self, x, args))(name)
+                                            ^^^^^^^^^^^^^^^^^^^^^^
+  File ""C:\Program Files\Lumerical\v231\api\python\lumapi.py"", line 819, in appCall
+    raise LumApiError(message)
+lumapi.LumApiError: 'Error:  line -1:'
+",2026-04-17 03:16:48,"{""w_r"": 4.0784776229201844e-07, ""h_si"": 9e-08, ""doping"": 8.96604440310264e+19, ""S"": 8e-07, ""lambda"": 1.26e-06, ""length"": 0.00014923470137179516, ""sim_id"": 271}"
+272,CHARGE_SETUP,LumApiError,'Error:  line -1:',"Traceback (most recent call last):
+  File ""C:\Mac\Home\Desktop\PIN_MZ\PS_Opt_V2\system\sim_handler.py"", line 645, in run_full_simulation
+    charge.load(config.CHARGE_SIM_FILE)
+  File ""C:\Program Files\Lumerical\v231\api\python\lumapi.py"", line 1172, in <lambda>
+    method = (lambda x: lambda self, *args: appCall(self, x, args))(name)
+                                            ^^^^^^^^^^^^^^^^^^^^^^
+  File ""C:\Program Files\Lumerical\v231\api\python\lumapi.py"", line 819, in appCall
+    raise LumApiError(message)
+lumapi.LumApiError: 'Error:  line -1:'
+",2026-04-17 03:17:17,"{""w_r"": 5e-07, ""h_si"": 9e-08, ""doping"": 7.398299623600226e+19, ""S"": 5.515077297494364e-08, ""lambda"": 1.2603856846657152e-06, ""length"": 0.00015599596435941855, ""sim_id"": 272}"
+267,CHARGE_SETUP,LumApiError,'Error:  line -1:',"Traceback (most recent call last):
+  File ""C:\Mac\Home\Desktop\PIN_MZ\PS_Opt_V2\system\sim_handler.py"", line 645, in run_full_simulation
+    charge.load(config.CHARGE_SIM_FILE)
+  File ""C:\Program Files\Lumerical\v231\api\python\lumapi.py"", line 1172, in <lambda>
+    method = (lambda x: lambda self, *args: appCall(self, x, args))(name)
+                                            ^^^^^^^^^^^^^^^^^^^^^^
+  File ""C:\Program Files\Lumerical\v231\api\python\lumapi.py"", line 819, in appCall
+    raise LumApiError(message)
+lumapi.LumApiError: 'Error:  line -1:'
+",2026-04-17 03:25:19,"{""w_r"": 3.9202485262359276e-07, ""h_si"": 9e-08, ""doping"": 8.923651597839642e+19, ""S"": 6.019273973585616e-07, ""lambda"": 1.26e-06, ""length"": 0.00014880256473290819, ""sim_id"": 267}"
+271,CHARGE_SETUP,LumApiError,'Exception [<Global>::appOpened]: Session not found',"Traceback (most recent call last):
+  File ""C:\Mac\Home\Desktop\PIN_MZ\PS_Opt_V2\system\sim_handler.py"", line 644, in run_full_simulation
+    charge = lumapi.DEVICE(hide=hide_gui)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File ""C:\Program Files\Lumerical\v231\api\python\lumapi.py"", line 1389, in __init__
+    super(DEVICE, self).__init__('device', filename, key, hide, serverArgs, **kwargs)
+  File ""C:\Program Files\Lumerical\v231\api\python\lumapi.py"", line 1112, in __init__
+    self.handle = open(product, key, hide, serverArgs)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File ""C:\Program Files\Lumerical\v231\api\python\lumapi.py"", line 242, in open
+    raise LumApiError(error)
+lumapi.LumApiError: 'Exception [<Global>::appOpened]: Session not found'
+",2026-04-20 00:29:48,"{""w_r"": 3.9225968778580387e-07, ""h_si"": 1.2999999999999997e-07, ""doping"": 2.5977469736255753e+20, ""S"": 8e-07, ""lambda"": 1.3530857470283566e-06, ""length"": 0.0004912118799068319, ""sim_id"": 271}"
