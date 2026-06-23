@@ -10,7 +10,7 @@ import numpy as np
 _BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Lumerical API paths
-LUMERICAL_API_PATH = "C:\\Program Files\\Lumerical\\v231\\api\\python"  # Lumerical Python API path
+LUMERICAL_API_PATH = "C:\\Program Files\\Lumerical\\v251\\api\\python"  # Lumerical Python API path
 LUMAPI_PATH = 'lumapi.py'  # Lumerical API module name
 
 # Project file paths (relative to PS_Opt_V2 directory)
@@ -117,3 +117,4 @@ C_BASE = MAX_VALID_COST                  # Failed-device baseline (Eq. 35)
 BETA_ELEC = (9.0 * C_BASE) / (np.pi**2)  # Quadratic electrical penalty coefficient (Eq. 37)
 BETA_OPT  = (9.0 * C_BASE) / ALPHA_MAX   # Linear optical penalty coefficient (Eq. 39)
 
+this is github test
